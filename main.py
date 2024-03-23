@@ -1,4 +1,5 @@
 import random
+import datetime
 from functools import partial
 from pathlib import Path
 from typing import List
@@ -162,24 +163,71 @@ class MainText(ft.UserControl):
 
 
 class Statistics:
-    # TODO
-    def __init__(self):
-        pass
+    # TODO: add all information to show already compelted tests
+    def __init__(self,
+                 start_time: datetime.datetime | None = None,
+                 end_time: datetime.datetime | None = None):
+        self.start_time = start_time
+        if start_time is None:
+            self.start_time = datetime.datetime.now()
+
+        # if None it means, that test is not over yer
+        self.end_time = end_time
+
+        self.total_key_presses = 0
+        self.correct_key_presses = 0
+
+    def key_pressed(self, key: str, is_correct: bool | None = None):
+        """Handles key press
+
+        Args:
+            key (str): allowed char or backspace
+            is_correct (bool | None, optional): Must be not None if key != backspace.
+        """
+
+        if key != 'backspace':
+            self.total_key_presses += 1
+            self.correct_key_presses += is_correct
+
+    def get_accuracy(self) -> float:
+        """Returns accuracy (in percents)"""
+
+        if self.total_key_presses == 0:
+            return 100.0
+        return self.correct_key_presses / self.total_key_presses * 100.0
+
+    def get_cpm(self) -> float:
+        """Returns average cpm"""
+        current_time = self.end_time
+        if current_time is None:
+            current_time = datetime.datetime.now()
+
+        start_timestamp = self.start_time.timestamp()
+        current_timestamp = current_time.timestamp()
+
+        delta_minutes = (current_timestamp - start_timestamp) / 60.0
+
+        return self.correct_key_presses / delta_minutes
+
+    def get_wpm(self) -> float:
+        """Returns average wpm (1 word == 5 chars)"""
+        return self.get_cpm() / 5.0
 
 
 class TypingTest:
     def __init__(self, page: ft.Page):
         self.is_running = False
-        self.statistics = Statistics()
+        self.page = page
 
         self.text_generator = TextGenerator(language='en')
 
         self.size_mode = "words"
         # if not None (size_mode = time) means amount of seconds given for test
         self.available_time: int | None = None
-        self.words_to_generate = 25
+        self.words_to_generate = DEFAULT_WORDS_COUNT[1]
 
-        self.correct_text = self.text_generator.generate(30)
+        self.correct_text = self.text_generator.generate(
+            self.words_to_generate)
         self.letter_colors = [LetterColor.UNUSED] * len(self.correct_text)
         self.display_text = self.correct_text
 
@@ -187,18 +235,34 @@ class TypingTest:
 
         self.main_text = MainText(text=self.display_text,
                                   letter_colors=self.letter_colors)
-
         self.settings_bar = SettingsBar(typing_test=self)
+        self.information_bar = InformationBar()
+        self.statistics: Statistics = None
 
-        page.add(self.settings_bar)
-        page.add(self.main_text)
+        self.visual_element = ft.Column(
+            [
+                self.settings_bar,
+                self.main_text
+            ],
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER
+        )
+
+        self.page.add(self.visual_element)
 
     def start(self):
-        # TODO: what it should do
+        # TODO: remove settings bar
+        self.is_running = True
+        self.statistics = Statistics()
+        self.visual_element.controls[0] = self.information_bar
+        self.visual_element.update()
+
+    def stop(self):
+        # TODO: show statistic
         pass
 
     def regenerate_text(self):
-        self.correct_text = self.text_generator.generate(self.words_to_generate)
+        self.correct_text = self.text_generator.generate(
+            self.words_to_generate)
         self.letter_colors = [LetterColor.UNUSED] * len(self.correct_text)
         self.main_text.update_content(self.correct_text, self.letter_colors)
 
@@ -227,10 +291,20 @@ class TypingTest:
 
         self.regenerate_text()
 
+    def update_information_bar(self):
+        accuracy = self.statistics.get_accuracy()
+        self.information_bar.set_accuracy(f"{accuracy:.1f}")
+
+        wpm = self.statistics.get_wpm()
+        self.information_bar.set_wpm(f"{wpm:.1f}")
+
     def key_pressed(self, e):
         """Handles user key press event"""
 
         key = e.key.lower()
+
+        if (key == 'backspace' or key in ALLOWED_CHARS) and not self.is_running:
+            self.start()
 
         if key == 'backspace':
             idx = len(self.printed_text) - 1
@@ -239,6 +313,7 @@ class TypingTest:
 
                 self.printed_text = self.printed_text[:-1]
                 self.letter_colors[idx] = LetterColor.UNUSED
+                self.statistics.key_pressed(key)
 
         elif key in ALLOWED_CHARS:
             position = len(self.printed_text)
@@ -247,10 +322,13 @@ class TypingTest:
             self.printed_text += key
             if need_key == key:
                 self.letter_colors[position] = LetterColor.CORRECT
+                self.statistics.key_pressed(key, is_correct=True)
             else:
                 self.letter_colors[position] = LetterColor.WRONG
+                self.statistics.key_pressed(key, is_correct=False)
 
         self.main_text.update_content(self.correct_text, self.letter_colors)
+        self.update_information_bar()
 
 
 class SettingsBar(ft.UserControl):
@@ -344,20 +422,22 @@ class SettingsBar(ft.UserControl):
         super().__init__()
 
     def toggle_punctuation(self, _):
-        """Updates punctuation button and redirects further"""
+        """Toggles punctuation setting"""
         self.typing_test.toggle_punctuation()
 
         self.punctuation.toggle()
         self.punctuation.update()
 
     def toggle_numbers(self, _):
-        """Updates numbers button and redirects further"""
+        """Toggles numbers settings"""
         self.typing_test.toggle_numbers()
 
         self.numbers.toggle()
         self.numbers.update()
 
     def select_time(self, _, button_idx: int = 1):
+        """Updates mode and text length"""
+
         self.words.toggle(False)
         self.time.toggle(True)
 
@@ -372,6 +452,8 @@ class SettingsBar(ft.UserControl):
         self.typing_test.select_time(DEFAULT_TIMES[button_idx])
 
     def select_words(self, _, button_idx: int = 1):
+        """Updates mode and text length"""
+
         self.words.toggle(True)
         self.time.toggle(False)
 
@@ -389,7 +471,6 @@ class SettingsBar(ft.UserControl):
         """Returns content for container"""
 
         for i in range(4):
-            print(self.words_selected)
             self.content.controls[-4 + i] = self.LabeledButton(
                 DEFAULT_WORDS_COUNT[i] if self.words_selected else DEFAULT_TIMES[i],
                 is_on=(i == self.selected_size_option),
@@ -398,7 +479,72 @@ class SettingsBar(ft.UserControl):
             )
 
     def build(self):
-        print(self.container.content.controls[-3].text)
+        return self.container
+
+
+class InformationBar(ft.UserControl):
+    """Visualizes information during test"""
+
+    class TextElement(ft.UserControl):
+        """One of information bar elements"""
+
+        def __init__(self, value: str, color):
+            super().__init__()
+            self.value = value
+            self.color = color
+
+            self.element = ft.Text(
+                self.value,
+                theme_style=ft.TextThemeStyle.TITLE_MEDIUM,
+                font_family="RobotoMono",
+                color=self.color,
+            )
+
+        def build(self):
+            return self.element
+
+    def __init__(self):
+        self.wpm = self.TextElement(
+            value="000.0", color=color_scheme['primary'])
+        self.accuracy = self.TextElement(
+            value="100.0", color=color_scheme['primary'])
+
+        self.content = ft.Row(
+            [
+                self.TextElement(
+                    value="WPM:", color=color_scheme['tertiary']),
+                self.wpm,
+                ft.VerticalDivider(),
+                self.TextElement(value="Accuracy:",
+                                 color=color_scheme['tertiary']),
+                self.accuracy
+            ],
+            spacing=15,
+            alignment=ft.MainAxisAlignment.CENTER
+        )
+
+        self.container = ft.Container(
+            self.content,
+            padding=10,
+            border_radius=10,
+            width=520,
+            bgcolor=color_scheme['nav_background'],
+            alignment=ft.alignment.center
+        )
+
+        super().__init__()
+
+    def set_wpm(self, value: str):
+        """Update displayed accuracy information"""
+        self.wpm.element.value = value
+        self.wpm.update()
+
+    def set_accuracy(self, value: str):
+        """Update displayed accuracy information"""
+        self.accuracy.element.value = value
+        self.accuracy.update()
+
+    def build(self):
         return self.container
 
 
