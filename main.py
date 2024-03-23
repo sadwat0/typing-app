@@ -21,24 +21,39 @@ LANGUAGE_TO_PATH = {
 }
 
 ALLOWED_CHARS = ' abcdefghijklmnopqrstuvwxyzабвгдеёжзийклмнопрстуфхцчшщъыьэюя'
+PUNCTUATION_CHARS = '.,;?!'
 
 DEFAULT_WORDS_COUNT = [10, 25, 50, 100]
 DEFAULT_TIMES = [15, 30, 60, 120]
 
 
 class TextGenerator:
+    """Generates text according to settings"""
+
     def __init__(
         self,
         language: str = "en",
-        vocabulary_path: str = None
+        vocabulary_path: str = None,
+        punctuation: bool = False,
+        numbers: bool = False,
     ):
         self.language = language
         self.vocabulary = ["empty"]
+        self.punctuation = punctuation
+        self.numbers = numbers
 
         if vocabulary_path is not None:
             self.load_vocabulary(vocabulary_path)
         elif language is not None:
             self.load_vocabulary(LANGUAGE_TO_PATH[language])
+
+    def toggle_punctuation(self):
+        """Toggles punctuation for generation"""
+        self.punctuation = not self.punctuation
+
+    def toggle_numbers(self):
+        """Toggles numbers for generation"""
+        self.numbers = not self.numbers
 
     def load_vocabulary(self, path: str):
         """Loads vocab from certain path"""
@@ -47,24 +62,44 @@ class TextGenerator:
 
     def generate(self, words_count: int = 20) -> str:
         """Generates text to print according to settings."""
-        return " ".join(random.sample(self.vocabulary, words_count))
+        # TODO: punctuation, numbers
+        words = []
+
+        for _ in range(words_count):
+            current_word = random.choice(self.vocabulary)
+
+            # add numbers
+            if self.numbers and random.uniform(0, 1) <= 0.15:
+                current_word = str(random.randint(0, 10_000))
+
+            # add punctuation
+            if self.punctuation and random.uniform(0, 1) <= 0.15:
+                current_word += random.choice(PUNCTUATION_CHARS)
+
+            words.append(current_word)
+
+        return " ".join(words)
 
 
 class LetterColor(Enum):
+    """Enum for color names"""
+
     CORRECT = color_scheme['secondary']
     WRONG = color_scheme['primary']
     UNUSED = color_scheme['tertiary']
 
 
 class Letter(ft.UserControl):
-    def __init__(self, content: str, color: LetterColor):
+    """One letter from MainText"""
+
+    def __init__(self, value: str, color: LetterColor):
         super().__init__()
-        self.content = content
+        self.value = value
         self.color = color.value
 
     def build(self):
         return ft.Text(
-            self.content,
+            self.value,
             size=FONT_SIZE,
             color=self.color,
             font_family="RobotoMono",
@@ -76,7 +111,7 @@ class MainText(ft.UserControl):
         super().__init__()
         self.text = text
         self.letter_colors = letter_colors if letter_colors is not None else [
-            0] * len(text)
+            LetterColor.UNUSED] * len(text)
 
         self.content_container = ft.Container(self.generate_content())
 
@@ -87,6 +122,7 @@ class MainText(ft.UserControl):
 
         current_word_letters: List[Letter] = []
         completed_words = []
+
         for letter, color in zip(self.text, self.letter_colors):
             current_word_letters.append(Letter(letter, color))
             if letter == ' ':
@@ -109,7 +145,11 @@ class MainText(ft.UserControl):
             width=1000,
         )
 
-    def update_content(self, letter_colors: List[LetterColor]):
+    def update_content(self, text: str, letter_colors: List[LetterColor] | None = None):
+        if letter_colors is None:
+            letter_colors = [LetterColor.UNUSED] * len(self.text)
+
+        self.text = text
         self.letter_colors = letter_colors
 
         self.content_container.content = self.generate_content()
@@ -133,15 +173,20 @@ class TypingTest:
         self.statistics = Statistics()
 
         self.text_generator = TextGenerator(language='en')
-        self.need_type = self.text_generator.generate(30)
-        self.letter_color = [LetterColor.UNUSED] * len(self.need_type)
+
+        self.size_mode = "words"
+        # if not None (size_mode = time) means amount of seconds given for test
+        self.available_time: int | None = None
+        self.words_to_generate = 25
+
+        self.correct_text = self.text_generator.generate(30)
+        self.letter_colors = [LetterColor.UNUSED] * len(self.correct_text)
+        self.display_text = self.correct_text
 
         self.printed_text = ""
 
-        self.display_text = self.need_type
-
         self.main_text = MainText(text=self.display_text,
-                                  letter_colors=self.letter_color)
+                                  letter_colors=self.letter_colors)
 
         self.settings_bar = SettingsBar(typing_test=self)
 
@@ -149,20 +194,38 @@ class TypingTest:
         page.add(self.main_text)
 
     def start(self):
-        # TODO, what it should do
+        # TODO: what it should do
         pass
 
+    def regenerate_text(self):
+        self.correct_text = self.text_generator.generate(self.words_to_generate)
+        self.letter_colors = [LetterColor.UNUSED] * len(self.correct_text)
+        self.main_text.update_content(self.correct_text, self.letter_colors)
+
     def toggle_punctuation(self):
-        print('toggle punctuation')
+        # TODO: reset game
+        self.text_generator.toggle_punctuation()
+
+        self.regenerate_text()
 
     def toggle_numbers(self):
-        print('toggle numbers')
+        self.text_generator.toggle_numbers()
+
+        self.regenerate_text()
 
     def select_time(self, count: int = 15):
-        print('select time', count)
+        self.size_mode = "time"
+        self.available_time = count
+        self.words_to_generate = 250
+
+        self.regenerate_text()
 
     def select_words(self, count: int = 25):
-        print('select words', count)
+        self.size_mode = "words"
+        self.available_time = None
+        self.words_to_generate = count
+
+        self.regenerate_text()
 
     def key_pressed(self, e):
         """Handles user key press event"""
@@ -172,22 +235,22 @@ class TypingTest:
         if key == 'backspace':
             idx = len(self.printed_text) - 1
             if idx >= 0 and (self.printed_text[idx] != ' '
-                             or self.printed_text[idx] != self.need_type[idx]):
+                             or self.printed_text[idx] != self.correct_text[idx]):
 
                 self.printed_text = self.printed_text[:-1]
-                self.letter_color[idx] = LetterColor.UNUSED
+                self.letter_colors[idx] = LetterColor.UNUSED
 
         elif key in ALLOWED_CHARS:
             position = len(self.printed_text)
-            need_key = self.need_type[position]
+            need_key = self.correct_text[position]
 
             self.printed_text += key
             if need_key == key:
-                self.letter_color[position] = LetterColor.CORRECT
+                self.letter_colors[position] = LetterColor.CORRECT
             else:
-                self.letter_color[position] = LetterColor.WRONG
+                self.letter_colors[position] = LetterColor.WRONG
 
-        self.main_text.update_content(self.letter_color)
+        self.main_text.update_content(self.correct_text, self.letter_colors)
 
 
 class SettingsBar(ft.UserControl):
@@ -306,7 +369,7 @@ class SettingsBar(ft.UserControl):
         self.update_buttons()
         self.content.update()
 
-        self.typing_test.select_time(button_idx)
+        self.typing_test.select_time(DEFAULT_TIMES[button_idx])
 
     def select_words(self, _, button_idx: int = 1):
         self.words.toggle(True)
@@ -320,19 +383,10 @@ class SettingsBar(ft.UserControl):
         self.update_buttons()
         self.content.update()
 
-        self.typing_test.select_words(button_idx)
+        self.typing_test.select_words(DEFAULT_WORDS_COUNT[button_idx])
 
     def update_buttons(self):
         """Returns content for container"""
-        # new_buttons = [
-        #     self.LabeledButton(
-        #         DEFAULT_WORDS_COUNT[i] if self.words_selected else DEFAULT_TIMES[i],
-        #         is_on=(i == self.selected_size_option),
-        #         on_click=partial(
-        #             self.select_words if self.words_selected else self.select_time, button_idx=i)
-        #     )
-        #     for i in range(4)
-        # ]
 
         for i in range(4):
             print(self.words_selected)
@@ -342,13 +396,6 @@ class SettingsBar(ft.UserControl):
                 on_click=partial(
                     self.select_words if self.words_selected else self.select_time, button_idx=i)
             )
-            # button.text = DEFAULT_WORDS_COUNT[i] if self.words_selected else DEFAULT_TIMES[i]
-            # button.is_on = (i == self.selected_size_option)
-            # button.on_click = partial(
-            #     self.select_words if self.words_selected else self.select_time, button_idx=i)
-
-            # if added_to_page:
-            #     button.update()
 
     def build(self):
         print(self.container.content.controls[-3].text)
