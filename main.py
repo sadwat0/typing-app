@@ -1,3 +1,6 @@
+import os
+from csv import DictWriter
+import pandas as pd
 import random
 import datetime
 from functools import partial
@@ -21,11 +24,31 @@ LANGUAGE_TO_PATH = {
     'ru': Path('./assets/vocabulary/ru-10000.txt')
 }
 
-ALLOWED_CHARS = ' abcdefghijklmnopqrstuvwxyzабвгдеёжзийклмнопрстуфхцчшщъыьэюя'
 PUNCTUATION_CHARS = '.,;?!'
+ALLOWED_CHARS = ' abcdefghijklmnopqrstuvwxyz' \
+    + 'абвгдеёжзийклмнопрстуфхцчшщъыьэюя' \
+    + '0123456789' \
+    + PUNCTUATION_CHARS
 
 DEFAULT_WORDS_COUNT = [10, 25, 50, 100]
 DEFAULT_TIMES = [15, 30, 60, 120]
+
+STATISTICS_FIELD_NAMES = [
+    'wpm', 'accuracy',
+    'test_size_mode', 'test_size',
+    'language',
+    'punctuation', 'numbers',
+    'total_key_presses', 'correct_key_presses',
+    'start_time', 'end_time'
+]
+
+# Checking for saves file existence
+if not os.path.exists('./saves'):
+    os.makedirs('./saves')
+
+if not os.path.isfile('./saves/data.csv'):
+    with open('./saves/data.csv', 'w', encoding='utf-8') as f:
+        f.write(",".join(STATISTICS_FIELD_NAMES) + '\n')
 
 
 class TextGenerator:
@@ -116,8 +139,6 @@ class MainText(ft.UserControl):
 
         self.content_container = ft.Container(self.generate_content())
 
-        # assert len(text) == len(letter_state)
-
     def generate_content(self):
         """Returns content with self.text and self.letter_colors"""
 
@@ -147,6 +168,14 @@ class MainText(ft.UserControl):
         )
 
     def update_content(self, text: str, letter_colors: List[LetterColor] | None = None):
+        """Updates gui with new text
+
+        Args:
+            text (str): text to visualize
+            letter_colors (List[LetterColor] | None):
+                if None it equivalent to List[LetterColor.UNUSED]
+        """
+
         if letter_colors is None:
             letter_colors = [LetterColor.UNUSED] * len(self.text)
 
@@ -163,10 +192,28 @@ class MainText(ft.UserControl):
 
 
 class Statistics:
+    """
+    Stores information about running or completed test
+    and calculates typing speed (cpm, wpm), accuracy
+    """
+
     # TODO: add all information to show already compelted tests
-    def __init__(self,
-                 start_time: datetime.datetime | None = None,
-                 end_time: datetime.datetime | None = None):
+    def __init__(
+        self,
+        test_size_mode: str | None = None,
+        test_size: str | None = None,
+        language: str | None = None,
+        punctuation: bool = False,
+        numbers: bool = False,
+        start_time: datetime.datetime | None = None,
+        end_time: datetime.datetime | None = None,
+        total_key_presses: int = 0,
+        correct_key_presses: int = 0
+    ):
+        self.test_size_mode = test_size_mode
+        self.test_size = test_size
+        self.language = language
+
         self.start_time = start_time
         if start_time is None:
             self.start_time = datetime.datetime.now()
@@ -174,8 +221,11 @@ class Statistics:
         # if None it means, that test is not over yer
         self.end_time = end_time
 
-        self.total_key_presses = 0
-        self.correct_key_presses = 0
+        self.total_key_presses = total_key_presses
+        self.correct_key_presses = correct_key_presses
+
+        self.punctuation = punctuation
+        self.numbers = numbers
 
     def key_pressed(self, key: str, is_correct: bool | None = None):
         """Handles key press
@@ -207,25 +257,62 @@ class Statistics:
 
         delta_minutes = (current_timestamp - start_timestamp) / 60.0
 
+        if delta_minutes == 0:
+            return 0.0
+
         return self.correct_key_presses / delta_minutes
 
     def get_wpm(self) -> float:
         """Returns average wpm (1 word == 5 chars)"""
         return self.get_cpm() / 5.0
 
+    def end(self):
+        """Writes end_time with current time"""
+        self.end_time = datetime.datetime.now()
+
+    def save(self):
+        """Saves to file"""
+        stats_dict = {
+            'wpm': self.get_wpm(),
+            'accuracy': self.get_accuracy(),
+            'test_size_mode': self.test_size_mode,
+            'test_size': self.test_size,
+            'language': self.language,
+            'punctuation': self.punctuation,
+            'numbers': self.numbers,
+            'total_key_presses': self.total_key_presses,
+            'correct_key_presses': self.correct_key_presses,
+            'start_time': self.start_time.strftime('%H:%M:%S.%f %d/%m/%y'),
+            'end_time': self.end_time.strftime('%H:%M:%S.%f %d/%m/%y')
+        }
+
+        with open('./saves/data.csv', 'a', newline='', encoding='utf-8') as f:
+            DictWriter(f, fieldnames=STATISTICS_FIELD_NAMES).writerow(
+                stats_dict)
+
+    def load(self, index: int):
+        """Loads from """
+
 
 class TypingTest:
+    class TestStatus(Enum):
+        """Enum for typing test status"""
+
+        NOT_STARTED = 0
+        RUNNING = 1
+        ENDED = 2
+
     def __init__(self, page: ft.Page):
-        self.is_running = False
+        self.status = self.TestStatus.NOT_STARTED
         self.page = page
 
-        self.text_generator = TextGenerator(language='en')
-
-        self.size_mode = "words"
+        self.language = 'en'
+        self.size_mode = 'words'
         # if not None (size_mode = time) means amount of seconds given for test
         self.available_time: int | None = None
         self.words_to_generate = DEFAULT_WORDS_COUNT[1]
 
+        self.text_generator = TextGenerator(language=self.language)
         self.correct_text = self.text_generator.generate(
             self.words_to_generate)
         self.letter_colors = [LetterColor.UNUSED] * len(self.correct_text)
@@ -239,6 +326,8 @@ class TypingTest:
         self.information_bar = InformationBar()
         self.statistics: Statistics = None
 
+        self.can_type = True
+
         self.visual_element = ft.Column(
             [
                 self.settings_bar,
@@ -247,37 +336,64 @@ class TypingTest:
             horizontal_alignment=ft.CrossAxisAlignment.CENTER
         )
 
-        self.page.add(self.visual_element)
-
     def start(self):
-        # TODO: remove settings bar
-        self.is_running = True
-        self.statistics = Statistics()
+        """Initializes new test (after user pressed button)"""
+
+        self.status = self.TestStatus.RUNNING
+        self.statistics = Statistics(
+            test_size_mode=self.size_mode,
+            test_size=self.words_to_generate if self.size_mode == 'words' else
+            self.available_time,
+            language=self.language,
+            punctuation=self.text_generator.punctuation,
+            numbers=self.text_generator.numbers,
+        )
+
         self.visual_element.controls[0] = self.information_bar
         self.visual_element.update()
 
     def stop(self):
-        # TODO: show statistic
-        pass
+        """Ends test (when user typed everything or time run out)"""
+
+        self.status = self.TestStatus.ENDED
+        self.statistics.end()
+        self.statistics.save()
+        # TODO: go to stats
+
+    def restart(self):
+        """
+        Restart test
+        WARNING: not save statistics if test is not over
+        """
+
+        self.status = self.TestStatus.NOT_STARTED
+        self.statistics = None
+        self.regenerate_text()
+        self.printed_text = ""
 
     def regenerate_text(self):
+        """Updates text content according to settings"""
+
         self.correct_text = self.text_generator.generate(
             self.words_to_generate)
         self.letter_colors = [LetterColor.UNUSED] * len(self.correct_text)
         self.main_text.update_content(self.correct_text, self.letter_colors)
 
     def toggle_punctuation(self):
+        """Changes punctuation setting"""
+
         # TODO: reset game
         self.text_generator.toggle_punctuation()
-
         self.regenerate_text()
 
     def toggle_numbers(self):
-        self.text_generator.toggle_numbers()
+        """Changes numbers setting"""
 
+        self.text_generator.toggle_numbers()
         self.regenerate_text()
 
     def select_time(self, count: int = 15):
+        """Changes test mode to "time" and sets time to {count}"""
         self.size_mode = "time"
         self.available_time = count
         self.words_to_generate = 250
@@ -285,6 +401,8 @@ class TypingTest:
         self.regenerate_text()
 
     def select_words(self, count: int = 25):
+        """Changes test mode to "words" and sets words count to {count}"""
+
         self.size_mode = "words"
         self.available_time = None
         self.words_to_generate = count
@@ -292,6 +410,8 @@ class TypingTest:
         self.regenerate_text()
 
     def update_information_bar(self):
+        """Update wpm & accuracy text (during test)"""
+
         accuracy = self.statistics.get_accuracy()
         self.information_bar.set_accuracy(f"{accuracy:.1f}")
 
@@ -301,9 +421,13 @@ class TypingTest:
     def key_pressed(self, e):
         """Handles user key press event"""
 
+        if self.status == self.TestStatus.ENDED or not self.can_type:
+            return
+
         key = e.key.lower()
 
-        if (key == 'backspace' or key in ALLOWED_CHARS) and not self.is_running:
+        if self.status == self.TestStatus.NOT_STARTED and (key == 'backspace'
+                                                           or key in ALLOWED_CHARS):
             self.start()
 
         if key == 'backspace':
@@ -329,6 +453,9 @@ class TypingTest:
 
         self.main_text.update_content(self.correct_text, self.letter_colors)
         self.update_information_bar()
+
+        if len(self.correct_text) == len(self.printed_text):
+            self.stop()
 
 
 class SettingsBar(ft.UserControl):
@@ -541,11 +668,134 @@ class InformationBar(ft.UserControl):
 
     def set_accuracy(self, value: str):
         """Update displayed accuracy information"""
-        self.accuracy.element.value = value
+        self.accuracy.element.value = f"{value}%"
         self.accuracy.update()
 
     def build(self):
         return self.container
+
+
+class StatisticsPage(ft.UserControl):
+    """Graphical element for stats page"""
+
+    class StatisticsVisualizer(ft.UserControl):
+        """Graphical element for one test statistics"""
+
+        def create_text_element(self, label: str, value: str) -> ft.Text:
+            """Creates formated text graphical element"""
+
+            return ft.Row(
+                [
+                    ft.Text(
+                        f"{label}: ",
+                        color=color_scheme['secondary'],
+                        theme_style=ft.TextThemeStyle.TITLE_MEDIUM
+                    ),
+                    ft.Text(
+                        value,
+                        color=color_scheme['primary'],
+                        theme_style=ft.TextThemeStyle.TITLE_MEDIUM
+                    )
+                ],
+                width=170,
+                alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
+            )
+
+        def __init__(self, statistics: Statistics):
+            super().__init__()
+
+            self.statistics = statistics
+
+            self.text_stats = ft.Column(
+                [
+                    self.create_text_element(
+                        "WPM", f"{self.statistics.get_wpm():.1f}"),
+                    self.create_text_element(
+                        "ACCURACY", f"{self.statistics.get_accuracy():.1f}%"),
+                    self.create_text_element(
+                        "LANGUAGE", f"{self.statistics.language}"),
+                    self.create_text_element(
+                        "MODE",
+                        f"{self.statistics.test_size} words"
+                        if self.statistics.test_size_mode == "words"
+                        else f"{self.statistics.test_size}s"
+                    ),
+                    self.create_text_element(
+                        "PUNCTUATION", "ON" if self.statistics.punctuation else "OFF"),
+                    self.create_text_element(
+                        "NUMBERS", "ON" if self.statistics.punctuation else "OFF"),
+                    self.create_text_element(
+                        "KEY PRESSES",
+                        str(self.statistics.correct_key_presses) +
+                        "/" +
+                        str(self.statistics.total_key_presses)),
+                    self.create_text_element(
+                        "START", f"{self.statistics.start_time.strftime('%H:%M:%S')}"),
+                    self.create_text_element(
+                        "END", f"{self.statistics.end_time.strftime('%H:%M:%S')}"),
+                ],
+                spacing=2,
+            )
+
+        def build(self):
+            return ft.Container(
+                ft.Row(
+                    [
+                        self.text_stats
+                        # TODO: heatmap
+                    ]
+                ),
+                padding=20,
+                border_radius=10,
+                width=800,
+                bgcolor=color_scheme['nav_background']
+            )
+
+    def __init__(self):
+        super().__init__()
+
+        self.list_content = []
+
+        self.stats = pd.read_csv('./saves/data.csv')
+        if len(self.stats) == 0:
+            self.list_content = [
+                ft.Text("You haven't passed any tests yet",
+                        color=color_scheme['secondary'],
+                        theme_style=ft.TextThemeStyle.HEADLINE_LARGE)
+            ]
+        else:
+            for _, row in self.stats.iloc[::-1].iterrows():
+                statistics_object = Statistics(
+                    test_size_mode=row['test_size_mode'],
+                    test_size=row['test_size'],
+                    language=row['language'],
+                    punctuation=row['punctuation'],
+                    numbers=row['numbers'],
+                    start_time=datetime.datetime.strptime(
+                        row['start_time'], '%H:%M:%S.%f %d/%m/%y'),
+                    end_time=datetime.datetime.strptime(
+                        row['end_time'], '%H:%M:%S.%f %d/%m/%y'),
+                    total_key_presses=row['total_key_presses'],
+                    correct_key_presses=row['correct_key_presses']
+                )
+
+                self.list_content.append(
+                    self.StatisticsVisualizer(statistics_object))
+
+    def build(self):
+        return ft.ListView(
+            self.list_content,
+            expand=1,
+            spacing=10,
+            auto_scroll=False
+        )
+
+
+def view_pop(_, page: ft.Page):
+    print('view pop')  # TODO: check if needed
+    page.views.pop()
+    top_view = page.views[-1]
+    page.go(top_view.route)
 
 
 def main(page: ft.Page):
@@ -553,13 +803,59 @@ def main(page: ft.Page):
     page.window_width = 1200
     page.window_height = 700
     page.bgcolor = color_scheme['background']
-    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
 
     page.fonts = {
         "RobotoMono": "./assets/RobotoMono-VariableFont_wght.ttf"
     }
 
     typing_test = TypingTest(page)
+
+    def route_change(_):
+        page.views.clear()
+
+        if page.route == '/':
+            page.views.append(
+                ft.View(
+                    '/',
+                    [
+                        ft.ElevatedButton(
+                            "View stats", on_click=lambda _: page.go("/stats")),
+                        ft.Divider(),
+                        typing_test.visual_element,
+                    ],
+                    bgcolor=color_scheme['background'],
+                    horizontal_alignment=ft.CrossAxisAlignment.CENTER
+                )
+            )
+
+            typing_test.can_type = True
+        elif page.route == '/stats':
+            list_view_builder = StatisticsPage()
+
+            page.views.append(
+                ft.View(
+                    '/stats',
+                    [
+                        ft.ElevatedButton(
+                            "Main Page", on_click=lambda _: page.go("/")),
+                        ft.Divider(),
+                        list_view_builder.build()
+                    ],
+                    bgcolor=color_scheme['background'],
+                    horizontal_alignment=ft.CrossAxisAlignment.CENTER
+                )
+            )
+
+            typing_test.can_type = False
+
+        page.update()
+        
+        if page.route == '/':
+            typing_test.restart()
+
+    page.on_route_change = route_change
+    page.on_view_pop = partial(view_pop, page=page)
+    page.go(page.route)
 
     page.on_keyboard_event = typing_test.key_pressed
     page.update()
