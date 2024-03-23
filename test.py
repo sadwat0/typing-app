@@ -1,23 +1,25 @@
-from time import sleep
+from datetime import datetime
 import flet as ft
+from flet_timer.flet_timer import Timer
+
 
 def main(page: ft.Page):
-    page.title = "Auto-scrolling ListView"
+    page.title = "Flet Timer example"
+    page.vertical_alignment = ft.MainAxisAlignment.CENTER
+    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
 
-    lv = ft.ListView(expand=1, spacing=10, padding=20, auto_scroll=True)
+    txt_time = ft.Text(value="None")
 
-    count = 1
-
-    for i in range(0, 20):
-        lv.controls.append(ft.Text(f"Line {count}"))
-        count += 1
-
-    page.add(lv)
-
-    for i in range(0, 60):
-        sleep(1)
-        lv.controls.append(ft.Text(f"Line {count}"))
-        count += 1
+    def refresh():
+        txt_time.value = datetime.now().strftime("%H:%M:%S")
         page.update()
 
-ft.app(target=main)
+    timer = Timer(name="timer", interval_s=1, callback=refresh)
+
+    page.add(
+        timer,
+        txt_time
+    )
+
+
+ft.app(main)

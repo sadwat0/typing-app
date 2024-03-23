@@ -1,13 +1,15 @@
 import os
 from csv import DictWriter
-import pandas as pd
 import random
 import datetime
 from functools import partial
 from pathlib import Path
 from typing import List
 from enum import Enum
+import pandas as pd
 import flet as ft
+from flet_timer.flet_timer import Timer
+
 
 color_scheme = {
     'background': "#242933",
@@ -31,7 +33,7 @@ ALLOWED_CHARS = ' abcdefghijklmnopqrstuvwxyz' \
     + PUNCTUATION_CHARS
 
 DEFAULT_WORDS_COUNT = [10, 25, 50, 100]
-DEFAULT_TIMES = [15, 30, 60, 120]
+DEFAULT_TIMES = [10, 15, 30, 60]
 
 STATISTICS_FIELD_NAMES = [
     'wpm', 'accuracy',
@@ -81,12 +83,12 @@ class TextGenerator:
 
     def load_vocabulary(self, path: str):
         """Loads vocab from certain path"""
-        with open(path, 'r', encoding='utf8') as f:
-            self.vocabulary = [line[:-1] for line in f.readlines()]
+        with open(path, 'r', encoding='utf8') as vocabulary_file:
+            self.vocabulary = [line[:-1]
+                               for line in vocabulary_file.readlines()]
 
     def generate(self, words_count: int = 20) -> str:
         """Generates text to print according to settings."""
-        # TODO: punctuation, numbers
         words = []
 
         for _ in range(words_count):
@@ -131,6 +133,8 @@ class Letter(ft.UserControl):
 
 
 class MainText(ft.UserControl):
+    """Graphic element for displaying typing test text"""
+
     def __init__(self, text: str, letter_colors: List[LetterColor] = None):
         super().__init__()
         self.text = text
@@ -197,7 +201,6 @@ class Statistics:
     and calculates typing speed (cpm, wpm), accuracy
     """
 
-    # TODO: add all information to show already compelted tests
     def __init__(
         self,
         test_size_mode: str | None = None,
@@ -286,8 +289,8 @@ class Statistics:
             'end_time': self.end_time.strftime('%H:%M:%S.%f %d/%m/%y')
         }
 
-        with open('./saves/data.csv', 'a', newline='', encoding='utf-8') as f:
-            DictWriter(f, fieldnames=STATISTICS_FIELD_NAMES).writerow(
+        with open('./saves/data.csv', 'a', newline='', encoding='utf-8') as stats_file:
+            DictWriter(stats_file, fieldnames=STATISTICS_FIELD_NAMES).writerow(
                 stats_dict)
 
     def load(self, index: int):
@@ -310,6 +313,9 @@ class TypingTest:
         self.size_mode = 'words'
         # if not None (size_mode = time) means amount of seconds given for test
         self.available_time: int | None = None
+
+        self.timer = None
+
         self.words_to_generate = DEFAULT_WORDS_COUNT[1]
 
         self.text_generator = TextGenerator(language=self.language)
@@ -352,13 +358,23 @@ class TypingTest:
         self.visual_element.controls[0] = self.information_bar
         self.visual_element.update()
 
+        self.timer = Timer(name="timer", interval_s=1,
+                           callback=self.every_second)
+        self.page.views[-1].controls.append(self.timer)
+        self.page.views[-1].update()
+
     def stop(self):
         """Ends test (when user typed everything or time run out)"""
 
         self.status = self.TestStatus.ENDED
         self.statistics.end()
         self.statistics.save()
-        # TODO: go to stats
+
+        self.timer = None
+        self.page.views[-1].controls.pop()
+        self.page.views[-1].update()
+
+        self.page.go("/stats")
 
     def restart(self):
         """
@@ -370,6 +386,21 @@ class TypingTest:
         self.statistics = None
         self.regenerate_text()
         self.printed_text = ""
+
+        self.visual_element.controls[0] = self.settings_bar
+        self.visual_element.update()
+
+    def every_second(self):
+        """Updates statistics and checks if test ended"""
+        if self.status == self.TestStatus.RUNNING:
+            self.update_information_bar()
+
+            if self.size_mode == "time":
+                current_time = datetime.datetime.now()
+                delta = current_time - self.statistics.start_time
+
+                if delta.total_seconds() >= self.available_time:
+                    self.stop()
 
     def regenerate_text(self):
         """Updates text content according to settings"""
@@ -396,7 +427,7 @@ class TypingTest:
         """Changes test mode to "time" and sets time to {count}"""
         self.size_mode = "time"
         self.available_time = count
-        self.words_to_generate = 250
+        self.words_to_generate = 120
 
         self.regenerate_text()
 
@@ -701,11 +732,12 @@ class StatisticsPage(ft.UserControl):
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
             )
 
-        def __init__(self, statistics: Statistics):
+        def __init__(self, index: int, statistics: Statistics):
             super().__init__()
 
             self.statistics = statistics
 
+            self.index = index
             self.text_stats = ft.Column(
                 [
                     self.create_text_element(
@@ -739,10 +771,19 @@ class StatisticsPage(ft.UserControl):
 
         def build(self):
             return ft.Container(
-                ft.Row(
+                ft.Column(
                     [
-                        self.text_stats
-                        # TODO: heatmap
+                        ft.Text(
+                            f"TEST #{self.index + 1}",
+                            color=color_scheme['secondary'],
+                            theme_style=ft.TextThemeStyle.HEADLINE_MEDIUM
+                        ),
+                        ft.Row(
+                            [
+                                self.text_stats
+                                # TODO: heatmap
+                            ]
+                        )
                     ]
                 ),
                 padding=20,
@@ -764,7 +805,7 @@ class StatisticsPage(ft.UserControl):
                         theme_style=ft.TextThemeStyle.HEADLINE_LARGE)
             ]
         else:
-            for _, row in self.stats.iloc[::-1].iterrows():
+            for index, row in self.stats.iloc[::-1].iterrows():
                 statistics_object = Statistics(
                     test_size_mode=row['test_size_mode'],
                     test_size=row['test_size'],
@@ -780,7 +821,7 @@ class StatisticsPage(ft.UserControl):
                 )
 
                 self.list_content.append(
-                    self.StatisticsVisualizer(statistics_object))
+                    self.StatisticsVisualizer(index, statistics_object))
 
     def build(self):
         return ft.ListView(
@@ -791,14 +832,9 @@ class StatisticsPage(ft.UserControl):
         )
 
 
-def view_pop(_, page: ft.Page):
-    print('view pop')  # TODO: check if needed
-    page.views.pop()
-    top_view = page.views[-1]
-    page.go(top_view.route)
-
-
 def main(page: ft.Page):
+    """Main function, start application"""
+
     page.title = "Typing app"
     page.window_width = 1200
     page.window_height = 700
@@ -849,12 +885,11 @@ def main(page: ft.Page):
             typing_test.can_type = False
 
         page.update()
-        
+
         if page.route == '/':
             typing_test.restart()
 
     page.on_route_change = route_change
-    page.on_view_pop = partial(view_pop, page=page)
     page.go(page.route)
 
     page.on_keyboard_event = typing_test.key_pressed
