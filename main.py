@@ -6,51 +6,79 @@ from functools import partial
 from pathlib import Path
 from typing import List
 from enum import Enum
+import numpy as np
 import pandas as pd
 import flet as ft
+import matplotlib
+import matplotlib.pyplot as plt
+import seaborn as sns
 from flet_timer.flet_timer import Timer
 
+# matplotlib.use("svg")
+matplotlib.use('agg')
+sns.set_theme()
 
 color_scheme = {
-    'background': "#242933",
-    'nav_background': '#1c232e',
-    'primary': '#ed4c57',  # red
-    'secondary': '#f5efe9',  # white
-    'tertiary': '#5a6173',  # gray
+    "background": "#242933",
+    "nav_background": "#1c232e",
+    "primary": "#ed4c57",  # red
+    "secondary": "#f5efe9",  # white
+    "tertiary": "#5a6173",  # gray
 }
 
 FONT_SIZE = 25
 
 LANGUAGE_TO_PATH = {
-    'en': Path('./assets/vocabulary/en-1000.txt'),
-    'ru': Path('./assets/vocabulary/ru-10000.txt')
+    "en": Path("./assets/vocabulary/en-1000.txt"),
+    "ru": Path("./assets/vocabulary/ru-10000.txt"),
+}
+LANGUAGE_LETTERS = {
+    "en": "abcdefghijklmnopqrstuvwxyz",
+    "ru": "абвгдеёжзийклмнопрстуфхцчшщъыьэюя",
 }
 
-PUNCTUATION_CHARS = '.,;?!'
-ALLOWED_CHARS = ' abcdefghijklmnopqrstuvwxyz' \
-    + 'абвгдеёжзийклмнопрстуфхцчшщъыьэюя' \
-    + '0123456789' \
+PUNCTUATION_CHARS = ".,;?!"
+ALLOWED_CHARS = (
+    " "
+    + LANGUAGE_LETTERS["en"]
+    + LANGUAGE_LETTERS["ru"]
+    + "0123456789"
     + PUNCTUATION_CHARS
+)
 
 DEFAULT_WORDS_COUNT = [10, 25, 50, 100]
 DEFAULT_TIMES = [10, 15, 30, 60]
 
 STATISTICS_FIELD_NAMES = [
-    'wpm', 'accuracy',
-    'test_size_mode', 'test_size',
-    'language',
-    'punctuation', 'numbers',
-    'total_key_presses', 'correct_key_presses',
-    'start_time', 'end_time'
+    "wpm",
+    "accuracy",
+    "test_size_mode",
+    "test_size",
+    "language",
+    "punctuation",
+    "numbers",
+    "total_key_presses",
+    "correct_key_presses",
+    "start_time",
+    "end_time",
 ]
 
 # Checking for saves file existence
-if not os.path.exists('./saves'):
-    os.makedirs('./saves')
+if not os.path.exists("./saves"):
+    os.makedirs("./saves")
 
-if not os.path.isfile('./saves/data.csv'):
-    with open('./saves/data.csv', 'w', encoding='utf-8') as f:
-        f.write(",".join(STATISTICS_FIELD_NAMES) + '\n')
+if not os.path.isfile("./saves/data.csv"):
+    with open("./saves/data.csv", "w", encoding="utf-8") as f:
+        f.write(",".join(STATISTICS_FIELD_NAMES) + "\n")
+
+if not os.path.isfile("./saves/heatmap.csv"):
+    with open("./saves/heatmap.csv", "w", encoding="utf-8") as f:
+        column_size = max(26, 33) ** 2
+        df = pd.DataFrame(
+            {"en": np.zeros(column_size, dtype=int),
+             "ru": np.zeros(column_size, dtype=int)}
+        )
+        df.to_csv('./saves/heatmap.csv', index=False)
 
 
 class TextGenerator:
@@ -83,7 +111,7 @@ class TextGenerator:
 
     def load_vocabulary(self, path: str):
         """Loads vocab from certain path"""
-        with open(path, 'r', encoding='utf8') as vocabulary_file:
+        with open(path, "r", encoding="utf8") as vocabulary_file:
             self.vocabulary = [line[:-1]
                                for line in vocabulary_file.readlines()]
 
@@ -110,9 +138,9 @@ class TextGenerator:
 class LetterColor(Enum):
     """Enum for color names"""
 
-    CORRECT = color_scheme['secondary']
-    WRONG = color_scheme['primary']
-    UNUSED = color_scheme['tertiary']
+    CORRECT = color_scheme["secondary"]
+    WRONG = color_scheme["primary"]
+    UNUSED = color_scheme["tertiary"]
 
 
 class Letter(ft.UserControl):
@@ -138,8 +166,11 @@ class MainText(ft.UserControl):
     def __init__(self, text: str, letter_colors: List[LetterColor] = None):
         super().__init__()
         self.text = text
-        self.letter_colors = letter_colors if letter_colors is not None else [
-            LetterColor.UNUSED] * len(text)
+        self.letter_colors = (
+            letter_colors
+            if letter_colors is not None
+            else [LetterColor.UNUSED] * len(text)
+        )
 
         self.content_container = ft.Container(self.generate_content())
 
@@ -151,21 +182,22 @@ class MainText(ft.UserControl):
 
         for letter, color in zip(self.text, self.letter_colors):
             current_word_letters.append(Letter(letter, color))
-            if letter == ' ':
+            if letter == " ":
                 completed_words.append(
-                    ft.Row(current_word_letters, spacing=0, run_spacing=0, wrap=True))
+                    ft.Row(current_word_letters, spacing=0,
+                           run_spacing=0, wrap=True)
+                )
                 current_word_letters = []
 
         if len(current_word_letters) != 0:
             completed_words.append(
-                ft.Row(current_word_letters, spacing=0, run_spacing=0, wrap=True))
+                ft.Row(current_word_letters, spacing=0,
+                       run_spacing=0, wrap=True)
+            )
 
         return ft.Container(
             content=ft.Row(
-                controls=completed_words,
-                wrap=True,
-                spacing=0,
-                run_spacing=0
+                controls=completed_words, wrap=True, spacing=0, run_spacing=0
             ),
             alignment=ft.alignment.center,
             width=1000,
@@ -211,7 +243,7 @@ class Statistics:
         start_time: datetime.datetime | None = None,
         end_time: datetime.datetime | None = None,
         total_key_presses: int = 0,
-        correct_key_presses: int = 0
+        correct_key_presses: int = 0,
     ):
         self.test_size_mode = test_size_mode
         self.test_size = test_size
@@ -238,7 +270,7 @@ class Statistics:
             is_correct (bool | None, optional): Must be not None if key != backspace.
         """
 
-        if key != 'backspace':
+        if key != "backspace":
             self.total_key_presses += 1
             self.correct_key_presses += is_correct
 
@@ -276,25 +308,64 @@ class Statistics:
     def save(self):
         """Saves to file"""
         stats_dict = {
-            'wpm': self.get_wpm(),
-            'accuracy': self.get_accuracy(),
-            'test_size_mode': self.test_size_mode,
-            'test_size': self.test_size,
-            'language': self.language,
-            'punctuation': self.punctuation,
-            'numbers': self.numbers,
-            'total_key_presses': self.total_key_presses,
-            'correct_key_presses': self.correct_key_presses,
-            'start_time': self.start_time.strftime('%H:%M:%S.%f %d/%m/%y'),
-            'end_time': self.end_time.strftime('%H:%M:%S.%f %d/%m/%y')
+            "wpm": self.get_wpm(),
+            "accuracy": self.get_accuracy(),
+            "test_size_mode": self.test_size_mode,
+            "test_size": self.test_size,
+            "language": self.language,
+            "punctuation": self.punctuation,
+            "numbers": self.numbers,
+            "total_key_presses": self.total_key_presses,
+            "correct_key_presses": self.correct_key_presses,
+            "start_time": self.start_time.strftime("%H:%M:%S.%f %d/%m/%y"),
+            "end_time": self.end_time.strftime("%H:%M:%S.%f %d/%m/%y"),
         }
 
-        with open('./saves/data.csv', 'a', newline='', encoding='utf-8') as stats_file:
+        with open("./saves/data.csv", "a", newline="", encoding="utf-8") as stats_file:
             DictWriter(stats_file, fieldnames=STATISTICS_FIELD_NAMES).writerow(
-                stats_dict)
+                stats_dict
+            )
 
-    def load(self, index: int):
-        """Loads from """
+
+class HeatmapStatistics:
+    """Calculates and stores error heatmap"""
+
+    def __init__(self):
+        df = pd.read_csv('./saves/heatmap.csv')
+        self.stats = {"en": np.array(
+            df['en'][:26 * 26]).reshape(26, 26), "ru": np.array(df['ru']).reshape(33, 33)}
+
+    def add_key_press(self, need_type: str, typed: str):
+        """Updates stats"""
+
+        # Not error press
+        if need_type == typed:
+            return
+
+        if need_type in LANGUAGE_LETTERS["en"] and typed in LANGUAGE_LETTERS["en"]:
+            need_index = LANGUAGE_LETTERS['en'].find(need_type)
+            typed_index = LANGUAGE_LETTERS['en'].find(typed)
+
+            self.stats["en"][need_index][typed_index] += 1
+
+            print(need_index, typed_index,
+                  self.stats["en"][need_index][typed_index])
+        elif need_type in LANGUAGE_LETTERS["ru"] and typed in LANGUAGE_LETTERS["ru"]:
+            need_index = LANGUAGE_LETTERS['ru'].find(need_type)
+            typed_index = LANGUAGE_LETTERS['ru'].find(typed)
+
+            self.stats["ru"][need_index][typed_index] += 1
+
+    def save(self):
+        """Saves data to csv file"""
+
+        df = pd.DataFrame({
+            'en': np.concatenate([self.stats['en'].reshape(-1),
+                                  np.zeros(33 * 33 - 26 * 26, dtype=int)]),
+            'ru': self.stats['ru'].reshape(-1)
+        })
+
+        df.to_csv('./saves/heatmap.csv', index=False)
 
 
 class TypingTest:
@@ -309,8 +380,8 @@ class TypingTest:
         self.status = self.TestStatus.NOT_STARTED
         self.page = page
 
-        self.language = 'en'
-        self.size_mode = 'words'
+        self.language = "en"
+        self.size_mode = "words"
         # if not None (size_mode = time) means amount of seconds given for test
         self.available_time: int | None = None
 
@@ -326,20 +397,19 @@ class TypingTest:
 
         self.printed_text = ""
 
-        self.main_text = MainText(text=self.display_text,
-                                  letter_colors=self.letter_colors)
+        self.main_text = MainText(
+            text=self.display_text, letter_colors=self.letter_colors
+        )
         self.settings_bar = SettingsBar(typing_test=self)
         self.information_bar = InformationBar()
         self.statistics: Statistics = None
+        self.heatmap = HeatmapStatistics()
 
         self.can_type = True
 
         self.visual_element = ft.Column(
-            [
-                self.settings_bar,
-                self.main_text
-            ],
-            horizontal_alignment=ft.CrossAxisAlignment.CENTER
+            [self.settings_bar, self.main_text],
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
         )
 
     def start(self):
@@ -348,8 +418,11 @@ class TypingTest:
         self.status = self.TestStatus.RUNNING
         self.statistics = Statistics(
             test_size_mode=self.size_mode,
-            test_size=self.words_to_generate if self.size_mode == 'words' else
-            self.available_time,
+            test_size=(
+                self.words_to_generate
+                if self.size_mode == "words"
+                else self.available_time
+            ),
             language=self.language,
             punctuation=self.text_generator.punctuation,
             numbers=self.text_generator.numbers,
@@ -369,6 +442,7 @@ class TypingTest:
         self.status = self.TestStatus.ENDED
         self.statistics.end()
         self.statistics.save()
+        self.heatmap.save()
 
         self.timer = None
         self.page.views[-1].controls.pop()
@@ -413,7 +487,6 @@ class TypingTest:
     def toggle_punctuation(self):
         """Changes punctuation setting"""
 
-        # TODO: reset game
         self.text_generator.toggle_punctuation()
         self.regenerate_text()
 
@@ -457,14 +530,17 @@ class TypingTest:
 
         key = e.key.lower()
 
-        if self.status == self.TestStatus.NOT_STARTED and (key == 'backspace'
-                                                           or key in ALLOWED_CHARS):
+        if self.status == self.TestStatus.NOT_STARTED and (
+            key == "backspace" or key in ALLOWED_CHARS
+        ):
             self.start()
 
-        if key == 'backspace':
+        if key == "backspace":
             idx = len(self.printed_text) - 1
-            if idx >= 0 and (self.printed_text[idx] != ' '
-                             or self.printed_text[idx] != self.correct_text[idx]):
+            if idx >= 0 and (
+                self.printed_text[idx] != " "
+                or self.printed_text[idx] != self.correct_text[idx]
+            ):
 
                 self.printed_text = self.printed_text[:-1]
                 self.letter_colors[idx] = LetterColor.UNUSED
@@ -473,6 +549,8 @@ class TypingTest:
         elif key in ALLOWED_CHARS:
             position = len(self.printed_text)
             need_key = self.correct_text[position]
+
+            self.heatmap.add_key_press(need_type=need_key, typed=key)
 
             self.printed_text += key
             if need_key == key:
@@ -483,7 +561,9 @@ class TypingTest:
                 self.statistics.key_pressed(key, is_correct=False)
 
         self.main_text.update_content(self.correct_text, self.letter_colors)
-        self.update_information_bar()
+
+        if self.status == self.TestStatus.RUNNING:
+            self.update_information_bar()
 
         if len(self.correct_text) == len(self.printed_text):
             self.stop()
@@ -501,9 +581,7 @@ class SettingsBar(ft.UserControl):
             self.text = text
             self.is_on = is_on
             self.container = ft.Container(
-                self.generate_content(),
-                on_click=on_click
-            )
+                self.generate_content(), on_click=on_click)
             self.on_click = on_click
 
         def toggle(self, is_on: bool | None = None):
@@ -518,12 +596,14 @@ class SettingsBar(ft.UserControl):
             else:
                 self.is_on = is_on
 
-            new_color = color_scheme['primary'] if self.is_on else color_scheme['tertiary']
+            new_color = (
+                color_scheme["primary"] if self.is_on else color_scheme["tertiary"]
+            )
             self.container.content.color = new_color
 
         def generate_content(self) -> ft.UserControl:
             """Returns content for container"""
-            color = color_scheme['primary'] if self.is_on else color_scheme['tertiary']
+            color = color_scheme["primary"] if self.is_on else color_scheme["tertiary"]
 
             return ft.Text(
                 self.text,
@@ -545,34 +625,44 @@ class SettingsBar(ft.UserControl):
         self.words_selected = words_selected
 
         self.punctuation = self.LabeledButton(
-            "punctuation", is_on=False, on_click=self.toggle_punctuation)
+            "punctuation", is_on=False, on_click=self.toggle_punctuation
+        )
         self.numbers = self.LabeledButton(
-            "numbers", is_on=False, on_click=self.toggle_numbers)
+            "numbers", is_on=False, on_click=self.toggle_numbers
+        )
         self.time = self.LabeledButton(
-            "time", is_on=not words_selected, on_click=self.select_time)
+            "time", is_on=not words_selected, on_click=self.select_time
+        )
         self.words = self.LabeledButton(
-            "words", is_on=words_selected, on_click=self.select_words)
+            "words", is_on=words_selected, on_click=self.select_words
+        )
 
         self.buttons: List[ft.UserControl] = [
-            self.LabeledButton("loading", False, None) for i in range(4)]
+            self.LabeledButton("loading", False, None) for i in range(4)
+        ]
         self.selected_size_option = 1
 
-        self.content = ft.Row([
-            self.punctuation,
-            self.numbers,
-            ft.VerticalDivider(width=-3),
-            self.time,
-            self.words,
-            ft.VerticalDivider(width=-3),
-        ] + self.buttons, spacing=15, alignment=ft.MainAxisAlignment.CENTER)
+        self.content = ft.Row(
+            [
+                self.punctuation,
+                self.numbers,
+                ft.VerticalDivider(width=-3),
+                self.time,
+                self.words,
+                ft.VerticalDivider(width=-3),
+            ]
+            + self.buttons,
+            spacing=15,
+            alignment=ft.MainAxisAlignment.CENTER,
+        )
 
         self.container = ft.Container(
             self.content,
             padding=10,
             border_radius=10,
             width=520,
-            bgcolor=color_scheme['nav_background'],
-            alignment=ft.alignment.center
+            bgcolor=color_scheme["nav_background"],
+            alignment=ft.alignment.center,
         )
 
         self.update_buttons()
@@ -633,7 +723,9 @@ class SettingsBar(ft.UserControl):
                 DEFAULT_WORDS_COUNT[i] if self.words_selected else DEFAULT_TIMES[i],
                 is_on=(i == self.selected_size_option),
                 on_click=partial(
-                    self.select_words if self.words_selected else self.select_time, button_idx=i)
+                    self.select_words if self.words_selected else self.select_time,
+                    button_idx=i,
+                ),
             )
 
     def build(self):
@@ -663,22 +755,21 @@ class InformationBar(ft.UserControl):
 
     def __init__(self):
         self.wpm = self.TextElement(
-            value="000.0", color=color_scheme['primary'])
+            value="000.0", color=color_scheme["primary"])
         self.accuracy = self.TextElement(
-            value="100.0", color=color_scheme['primary'])
+            value="100.0", color=color_scheme["primary"])
 
         self.content = ft.Row(
             [
-                self.TextElement(
-                    value="WPM:", color=color_scheme['tertiary']),
+                self.TextElement(value="WPM:", color=color_scheme["tertiary"]),
                 self.wpm,
                 ft.VerticalDivider(),
                 self.TextElement(value="Accuracy:",
-                                 color=color_scheme['tertiary']),
-                self.accuracy
+                                 color=color_scheme["tertiary"]),
+                self.accuracy,
             ],
             spacing=15,
-            alignment=ft.MainAxisAlignment.CENTER
+            alignment=ft.MainAxisAlignment.CENTER,
         )
 
         self.container = ft.Container(
@@ -686,8 +777,8 @@ class InformationBar(ft.UserControl):
             padding=10,
             border_radius=10,
             width=520,
-            bgcolor=color_scheme['nav_background'],
-            alignment=ft.alignment.center
+            bgcolor=color_scheme["nav_background"],
+            alignment=ft.alignment.center,
         )
 
         super().__init__()
@@ -709,7 +800,7 @@ class InformationBar(ft.UserControl):
 class StatisticsPage(ft.UserControl):
     """Graphical element for stats page"""
 
-    class StatisticsVisualizer(ft.UserControl):
+    class TestStatisticsVisualizer(ft.UserControl):
         """Graphical element for one test statistics"""
 
         def create_text_element(self, label: str, value: str) -> ft.Text:
@@ -719,14 +810,14 @@ class StatisticsPage(ft.UserControl):
                 [
                     ft.Text(
                         f"{label}: ",
-                        color=color_scheme['secondary'],
-                        theme_style=ft.TextThemeStyle.TITLE_MEDIUM
+                        color=color_scheme["secondary"],
+                        theme_style=ft.TextThemeStyle.TITLE_MEDIUM,
                     ),
                     ft.Text(
                         value,
-                        color=color_scheme['primary'],
-                        theme_style=ft.TextThemeStyle.TITLE_MEDIUM
-                    )
+                        color=color_scheme["primary"],
+                        theme_style=ft.TextThemeStyle.TITLE_MEDIUM,
+                    ),
                 ],
                 width=170,
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
@@ -743,28 +834,36 @@ class StatisticsPage(ft.UserControl):
                     self.create_text_element(
                         "WPM", f"{self.statistics.get_wpm():.1f}"),
                     self.create_text_element(
-                        "ACCURACY", f"{self.statistics.get_accuracy():.1f}%"),
+                        "ACCURACY", f"{self.statistics.get_accuracy():.1f}%"
+                    ),
                     self.create_text_element(
                         "LANGUAGE", f"{self.statistics.language}"),
                     self.create_text_element(
                         "MODE",
-                        f"{self.statistics.test_size} words"
-                        if self.statistics.test_size_mode == "words"
-                        else f"{self.statistics.test_size}s"
+                        (
+                            f"{self.statistics.test_size} words"
+                            if self.statistics.test_size_mode == "words"
+                            else f"{self.statistics.test_size}s"
+                        ),
                     ),
                     self.create_text_element(
-                        "PUNCTUATION", "ON" if self.statistics.punctuation else "OFF"),
+                        "PUNCTUATION", "ON" if self.statistics.punctuation else "OFF"
+                    ),
                     self.create_text_element(
-                        "NUMBERS", "ON" if self.statistics.punctuation else "OFF"),
+                        "NUMBERS", "ON" if self.statistics.punctuation else "OFF"
+                    ),
                     self.create_text_element(
                         "KEY PRESSES",
-                        str(self.statistics.correct_key_presses) +
-                        "/" +
-                        str(self.statistics.total_key_presses)),
+                        str(self.statistics.correct_key_presses)
+                        + "/"
+                        + str(self.statistics.total_key_presses),
+                    ),
                     self.create_text_element(
-                        "START", f"{self.statistics.start_time.strftime('%H:%M:%S')}"),
+                        "START", f"{self.statistics.start_time.strftime('%H:%M:%S')}"
+                    ),
                     self.create_text_element(
-                        "END", f"{self.statistics.end_time.strftime('%H:%M:%S')}"),
+                        "END", f"{self.statistics.end_time.strftime('%H:%M:%S')}"
+                    ),
                 ],
                 spacing=2,
             )
@@ -775,21 +874,21 @@ class StatisticsPage(ft.UserControl):
                     [
                         ft.Text(
                             f"TEST #{self.index + 1}",
-                            color=color_scheme['secondary'],
-                            theme_style=ft.TextThemeStyle.HEADLINE_MEDIUM
+                            color=color_scheme["secondary"],
+                            theme_style=ft.TextThemeStyle.HEADLINE_MEDIUM,
                         ),
                         ft.Row(
                             [
                                 self.text_stats
                                 # TODO: heatmap
                             ]
-                        )
+                        ),
                     ]
                 ),
                 padding=20,
                 border_radius=10,
                 width=800,
-                bgcolor=color_scheme['nav_background']
+                bgcolor=color_scheme["nav_background"],
             )
 
     def __init__(self):
@@ -797,38 +896,102 @@ class StatisticsPage(ft.UserControl):
 
         self.list_content = []
 
-        self.stats = pd.read_csv('./saves/data.csv')
+        self.stats = pd.read_csv("./saves/data.csv")
         if len(self.stats) == 0:
             self.list_content = [
-                ft.Text("You haven't passed any tests yet",
-                        color=color_scheme['secondary'],
-                        theme_style=ft.TextThemeStyle.HEADLINE_LARGE)
+                ft.Text(
+                    "You haven't passed any tests yet",
+                    color=color_scheme["secondary"],
+                    theme_style=ft.TextThemeStyle.HEADLINE_LARGE,
+                )
             ]
         else:
             for index, row in self.stats.iloc[::-1].iterrows():
                 statistics_object = Statistics(
-                    test_size_mode=row['test_size_mode'],
-                    test_size=row['test_size'],
-                    language=row['language'],
-                    punctuation=row['punctuation'],
-                    numbers=row['numbers'],
+                    test_size_mode=row["test_size_mode"],
+                    test_size=row["test_size"],
+                    language=row["language"],
+                    punctuation=row["punctuation"],
+                    numbers=row["numbers"],
                     start_time=datetime.datetime.strptime(
-                        row['start_time'], '%H:%M:%S.%f %d/%m/%y'),
+                        row["start_time"], "%H:%M:%S.%f %d/%m/%y"
+                    ),
                     end_time=datetime.datetime.strptime(
-                        row['end_time'], '%H:%M:%S.%f %d/%m/%y'),
-                    total_key_presses=row['total_key_presses'],
-                    correct_key_presses=row['correct_key_presses']
+                        row["end_time"], "%H:%M:%S.%f %d/%m/%y"
+                    ),
+                    total_key_presses=row["total_key_presses"],
+                    correct_key_presses=row["correct_key_presses"],
                 )
 
                 self.list_content.append(
-                    self.StatisticsVisualizer(index, statistics_object))
+                    self.TestStatisticsVisualizer(index, statistics_object)
+                )
 
     def build(self):
-        return ft.ListView(
-            self.list_content,
-            expand=1,
-            spacing=10,
-            auto_scroll=False
+        return ft.ListView(self.list_content, expand=1, spacing=10, auto_scroll=False)
+
+
+class HeatmapsPage(ft.UserControl):
+    class LanguageHeatmap(ft.UserControl):
+        def __init__(self, language: str, heatmap_statistics: HeatmapStatistics):
+            super().__init__()
+            self.language = language
+            self.heatmap = None
+
+            plt.figure(figsize=(7, 7))
+            ax = plt.axes()
+
+            heatmap = sns.heatmap(
+                heatmap_statistics.stats[language],
+                annot=True,
+                xticklabels=LANGUAGE_LETTERS[language],
+                yticklabels=LANGUAGE_LETTERS[language],
+                cmap='coolwarm',
+                cbar=False,
+                ax=ax,
+                square=True,
+            )
+
+            ax.set_title(f"Language: {language}")
+            # TODO: check
+            plt.xlabel("Typed")
+            plt.ylabel("Correct")
+
+            fig = heatmap.get_figure()
+            fig.savefig(
+                f'./saves/heatmaps_{language}.png', transparent=True, bbox_inches='tight')
+
+            self.heatmap = ft.Image(
+                src=f"./saves/heatmaps_{language}.png",
+                width=500,
+                height=500,
+                fit=ft.ImageFit.CONTAIN
+            )
+
+        def build(self):
+            return ft.Container(
+                self.heatmap,
+                bgcolor=color_scheme['secondary'],
+                width=500,
+                height=500,
+                border_radius=20,
+                padding=ft.padding.only(top=10, bottom=10, right=20)
+            )
+
+    def __init__(self):
+        super().__init__()
+
+        self.stats = HeatmapStatistics()
+
+        self.heatmaps = [
+            self.LanguageHeatmap(language, self.stats)
+            for language in ['en', 'ru']
+        ]
+
+    def build(self):
+        return ft.Row(
+            self.heatmaps,
+            alignment=ft.MainAxisAlignment.SPACE_AROUND
         )
 
 
@@ -838,47 +1001,88 @@ def main(page: ft.Page):
     page.title = "Typing app"
     page.window_width = 1200
     page.window_height = 700
-    page.bgcolor = color_scheme['background']
+    page.bgcolor = color_scheme["background"]
 
-    page.fonts = {
-        "RobotoMono": "./assets/RobotoMono-VariableFont_wght.ttf"
-    }
+    page.fonts = {"RobotoMono": "./assets/RobotoMono-VariableFont_wght.ttf"}
 
     typing_test = TypingTest(page)
 
     def route_change(_):
         page.views.clear()
 
-        if page.route == '/':
+        if page.route == "/":
             page.views.append(
                 ft.View(
-                    '/',
+                    "/",
                     [
-                        ft.ElevatedButton(
-                            "View stats", on_click=lambda _: page.go("/stats")),
+                        ft.Row(
+                            [
+                                ft.ElevatedButton(
+                                    "Statistics", on_click=lambda _: page.go("/stats")
+                                ),
+                                ft.ElevatedButton(
+                                    "Heatmaps", on_click=lambda _: page.go("/heatmaps")
+                                ),
+                            ],
+                            alignment=ft.MainAxisAlignment.CENTER
+                        ),
                         ft.Divider(),
                         typing_test.visual_element,
                     ],
-                    bgcolor=color_scheme['background'],
-                    horizontal_alignment=ft.CrossAxisAlignment.CENTER
+                    bgcolor=color_scheme["background"],
+                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 )
             )
 
             typing_test.can_type = True
-        elif page.route == '/stats':
+        elif page.route == "/stats":
             list_view_builder = StatisticsPage()
 
             page.views.append(
                 ft.View(
-                    '/stats',
+                    "/stats",
                     [
-                        ft.ElevatedButton(
-                            "Main Page", on_click=lambda _: page.go("/")),
+                        ft.Row(
+                            [
+                                ft.ElevatedButton(
+                                    "Main page", on_click=lambda _: page.go("/")
+                                ),
+                                ft.ElevatedButton(
+                                    "Heatmaps", on_click=lambda _: page.go("/heatmaps")
+                                ),
+                            ],
+                            alignment=ft.MainAxisAlignment.CENTER
+                        ),
                         ft.Divider(),
-                        list_view_builder.build()
+                        list_view_builder.build(),
                     ],
-                    bgcolor=color_scheme['background'],
-                    horizontal_alignment=ft.CrossAxisAlignment.CENTER
+                    bgcolor=color_scheme["background"],
+                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                )
+            )
+
+            typing_test.can_type = False
+        elif page.route == "/heatmaps":
+            page.views.append(
+                ft.View(
+                    "/heatmaps",
+                    [
+                        ft.Row(
+                            [
+                                ft.ElevatedButton(
+                                    "Main page", on_click=lambda _: page.go("/")
+                                ),
+                                ft.ElevatedButton(
+                                    "Statistics", on_click=lambda _: page.go("/stats")
+                                ),
+                            ],
+                            alignment=ft.MainAxisAlignment.CENTER
+                        ),
+                        ft.Divider(),
+                        HeatmapsPage(),
+                    ],
+                    bgcolor=color_scheme["background"],
+                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 )
             )
 
@@ -886,7 +1090,7 @@ def main(page: ft.Page):
 
         page.update()
 
-        if page.route == '/':
+        if page.route == "/":
             typing_test.restart()
 
     page.on_route_change = route_change
