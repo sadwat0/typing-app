@@ -107,30 +107,38 @@
 - `add_key_press(need_type, typed)` - обновляет `self.stats` в зависимости от корректности написания
 - `save()` - сохраняет себя в `.csv` файл
 
-### Класс `TypingTest`
-
-Атрибуты:
+### Датакласс `TestInfo`
 
 - `status` - запущен ли тест (`NOT_STARTED` | `RUNNING` | `ENDED`)
 - `language`
 - `size_mode` - `"words" | "time"`, описывалось ранее
 - `available_time: int | None` - хранит число секунд если `size_mode == "time"`
 - `words_to_generate` - количество слов согласно `size_mode`
-- `timer` - элемент, который каждую секунду будет вызывать `self.every_second()`
+- `can_type: bool` - нужно ли обрабатывать нажатия пользователя (т.е. он находится на нужной странице и готов печатать)
 
-- `text_generator: TextGenerator`
+### Датакласс `TextInfo`
+
+Хранит информацию о тексте для `TypingTest`
+
 - `correct_text: str` - то, что нужно напечатать в процессе теста
 - `letter_colors` - цвета, которые нужно подавать в `MainText`
 - `display_text: str` - равно `correct_text`, но теоретически можно было бы показывать на неправильных позициях то, что написал пользователь, а не то, что нужно
 - `printed_text: str` - то, что пользователь уже написал
-- `main_text: MainText` - для отрисовки
 
-- `settings_bar: SettingsBar`
+### Класс `TypingTest`
+
+Атрибуты:
+
+- `test_info: TestInfo`
+
+- `timer` - элемент, который каждую секунду будет вызывать `self.every_second()`
+
+- `text_generator: TextGenerator`
+- `main_text: MainText` - для отрисовки
+- `settings_bar: SettingsBar` - ссылка на панель настроек чтобы передавать ей команды
 - `information_bar: InformationBar`
 - `statistics: Statistics`
 - `heatmap: HeatmapStatistics`
-
-- `can_type: bool` - нужно ли обрабатывать нажатия пользователя (т.е. он находится на нужной странице и готов печатать)
 
 - `visual_element` - то, что нужно отрисовать (меню настроек/информации и текст)
 
