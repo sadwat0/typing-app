@@ -1,0 +1,7 @@
+flet==0.21.2
+flet_timer==0.0.13
+matplotlib==3.7.2
+numpy==1.25.2
+pandas==1.4.3
+pytest==8.0.2
+seaborn==0.13.2

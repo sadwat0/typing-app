@@ -13,7 +13,6 @@ color_scheme = {
     "secondary": "#f5efe9",  # white
     "tertiary": "#5a6173",  # gray
 }
-# TODO: remove
 
 
 class LetterColor(Enum):

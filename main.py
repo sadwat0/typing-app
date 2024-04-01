@@ -20,25 +20,6 @@ color_scheme = {
     "tertiary": "#5a6173",  # gray
 }
 
-# Checking for saves file existence
-if not os.path.exists("./saves"):
-    os.makedirs("./saves")
-
-if not os.path.isfile("./saves/data.csv"):
-    with open("./saves/data.csv", "w", encoding="utf-8") as f:
-        f.write(",".join(STATISTICS_FIELD_NAMES) + "\n")
-
-if not os.path.isfile("./saves/heatmap.csv"):
-    with open("./saves/heatmap.csv", "w", encoding="utf-8") as f:
-        column_size = max(26, 33) ** 2
-        df = pd.DataFrame(
-            {
-                "en": np.zeros(column_size, dtype=int),
-                "ru": np.zeros(column_size, dtype=int),
-            }
-        )
-        df.to_csv("./saves/heatmap.csv", index=False)
-
 
 def main(page: ft.Page):
     """Main function, start application"""
@@ -145,4 +126,24 @@ def main(page: ft.Page):
     page.update()
 
 
-ft.app(target=main)
+if __name__ == "__main__":
+    # Checking for saves file existence
+    if not os.path.exists("./saves"):
+        os.makedirs("./saves")
+
+    if not os.path.isfile("./saves/data.csv"):
+        with open("./saves/data.csv", "w", encoding="utf-8") as f:
+            f.write(",".join(STATISTICS_FIELD_NAMES) + "\n")
+
+    if not os.path.isfile("./saves/heatmap.csv"):
+        with open("./saves/heatmap.csv", "w", encoding="utf-8") as f:
+            column_size = max(26, 33) ** 2
+            df = pd.DataFrame(
+                {
+                    "en": np.zeros(column_size, dtype=int),
+                    "ru": np.zeros(column_size, dtype=int),
+                }
+            )
+            df.to_csv("./saves/heatmap.csv", index=False)
+
+    ft.app(target=main)
