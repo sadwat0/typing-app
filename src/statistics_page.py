@@ -48,13 +48,11 @@ class StatisticsPage(ft.UserControl):
             self.index = index
             self.text_stats = ft.Column(
                 [
-                    self.create_text_element(
-                        "WPM", f"{self.statistics.get_wpm():.1f}"),
+                    self.create_text_element("WPM", f"{self.statistics.get_wpm():.1f}"),
                     self.create_text_element(
                         "ACCURACY", f"{self.statistics.get_accuracy():.1f}%"
                     ),
-                    self.create_text_element(
-                        "LANGUAGE", f"{self.statistics.language}"),
+                    self.create_text_element("LANGUAGE", f"{self.statistics.language}"),
                     self.create_text_element(
                         "MODE",
                         (
@@ -94,11 +92,7 @@ class StatisticsPage(ft.UserControl):
                             color=color_scheme["secondary"],
                             theme_style=ft.TextThemeStyle.HEADLINE_MEDIUM,
                         ),
-                        ft.Row(
-                            [
-                                self.text_stats
-                            ]
-                        ),
+                        ft.Row([self.text_stats]),
                     ]
                 ),
                 padding=20,

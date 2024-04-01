@@ -34,7 +34,7 @@ class HeatmapsPage(ft.UserControl):
                 annot=True,
                 xticklabels=LANGUAGE_LETTERS[language],
                 yticklabels=LANGUAGE_LETTERS[language],
-                cmap='coolwarm',
+                cmap="coolwarm",
                 cbar=False,
                 ax=ax,
                 square=True,
@@ -46,23 +46,26 @@ class HeatmapsPage(ft.UserControl):
 
             fig = heatmap.get_figure()
             fig.savefig(
-                f'./saves/heatmaps_{language}.png', transparent=True, bbox_inches='tight')
+                f"./saves/heatmaps_{language}.png",
+                transparent=True,
+                bbox_inches="tight",
+            )
 
             self.heatmap = ft.Image(
                 src=f"./saves/heatmaps_{language}.png",
                 width=500,
                 height=500,
-                fit=ft.ImageFit.CONTAIN
+                fit=ft.ImageFit.CONTAIN,
             )
 
         def build(self):
             return ft.Container(
                 self.heatmap,
-                bgcolor=color_scheme['secondary'],
+                bgcolor=color_scheme["secondary"],
                 width=500,
                 height=500,
                 border_radius=20,
-                padding=ft.padding.only(top=10, bottom=10, right=20)
+                padding=ft.padding.only(top=10, bottom=10, right=20),
             )
 
     def __init__(self):
@@ -71,12 +74,8 @@ class HeatmapsPage(ft.UserControl):
         self.stats = HeatmapStatistics()
 
         self.heatmaps = [
-            self.LanguageHeatmap(language, self.stats)
-            for language in ['en', 'ru']
+            self.LanguageHeatmap(language, self.stats) for language in ["en", "ru"]
         ]
 
     def build(self):
-        return ft.Row(
-            self.heatmaps,
-            alignment=ft.MainAxisAlignment.SPACE_AROUND
-        )
+        return ft.Row(self.heatmaps, alignment=ft.MainAxisAlignment.SPACE_AROUND)

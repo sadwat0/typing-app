@@ -25,8 +25,7 @@ class SettingsBar(ft.UserControl):
 
             self.text = text
             self.is_on = is_on
-            self.container = ft.Container(
-                self.generate_content(), on_click=on_click)
+            self.container = ft.Container(self.generate_content(), on_click=on_click)
             self.on_click = on_click
 
         def toggle(self, is_on: bool | None = None):
@@ -64,10 +63,15 @@ class SettingsBar(ft.UserControl):
         def build(self):
             return self.container
 
-    def __init__(self, typing_test, words_selected: bool = True):
+    def __init__(self, typing_test, language: str = "en", words_selected: bool = True):
         self.typing_test = typing_test
 
         self.words_selected = words_selected
+
+        self.language = language
+        self.language_button = self.LabeledButton(
+            self.language, is_on=True, on_click=self.change_language
+        )
 
         self.punctuation = self.LabeledButton(
             "punctuation", is_on=False, on_click=self.toggle_punctuation
@@ -89,6 +93,8 @@ class SettingsBar(ft.UserControl):
 
         self.content = ft.Row(
             [
+                self.language_button,
+                ft.VerticalDivider(width=-3),
                 self.punctuation,
                 self.numbers,
                 ft.VerticalDivider(width=-3),
@@ -105,7 +111,7 @@ class SettingsBar(ft.UserControl):
             self.content,
             padding=10,
             border_radius=10,
-            width=520,
+            width=600,
             bgcolor=color_scheme["nav_background"],
             alignment=ft.alignment.center,
         )
@@ -159,6 +165,16 @@ class SettingsBar(ft.UserControl):
         self.content.update()
 
         self.typing_test.select_words(DEFAULT_WORDS_COUNT[button_idx])
+
+    def change_language(self, _):
+        """Switch language 'en' <-> 'ru'"""
+
+        new_language = "ru" if self.language == "en" else "en"
+        self.language_button.text = new_language
+        self.language_button.update()
+
+        self.language = new_language
+        self.typing_test.set_language(new_language)
 
     def update_buttons(self):
         """Returns content for container"""

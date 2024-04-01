@@ -65,15 +65,13 @@ class MainText(ft.UserControl):
             current_word_letters.append(Letter(letter, color))
             if letter == " ":
                 completed_words.append(
-                    ft.Row(current_word_letters, spacing=0,
-                           run_spacing=0, wrap=True)
+                    ft.Row(current_word_letters, spacing=0, run_spacing=0, wrap=True)
                 )
                 current_word_letters = []
 
         if len(current_word_letters) != 0:
             completed_words.append(
-                ft.Row(current_word_letters, spacing=0,
-                       run_spacing=0, wrap=True)
+                ft.Row(current_word_letters, spacing=0, run_spacing=0, wrap=True)
             )
 
         return ft.Container(

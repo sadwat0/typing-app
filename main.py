@@ -9,7 +9,7 @@ from src.typing_test import TypingTest
 from src.statistics_page import StatisticsPage
 from src.heatmaps_page import HeatmapsPage
 
-matplotlib.use('agg')
+matplotlib.use("agg")
 sns.set_theme()
 
 color_scheme = {
@@ -32,10 +32,12 @@ if not os.path.isfile("./saves/heatmap.csv"):
     with open("./saves/heatmap.csv", "w", encoding="utf-8") as f:
         column_size = max(26, 33) ** 2
         df = pd.DataFrame(
-            {"en": np.zeros(column_size, dtype=int),
-             "ru": np.zeros(column_size, dtype=int)}
+            {
+                "en": np.zeros(column_size, dtype=int),
+                "ru": np.zeros(column_size, dtype=int),
+            }
         )
-        df.to_csv('./saves/heatmap.csv', index=False)
+        df.to_csv("./saves/heatmap.csv", index=False)
 
 
 def main(page: ft.Page):
@@ -67,7 +69,7 @@ def main(page: ft.Page):
                                     "Heatmaps", on_click=lambda _: page.go("/heatmaps")
                                 ),
                             ],
-                            alignment=ft.MainAxisAlignment.CENTER
+                            alignment=ft.MainAxisAlignment.CENTER,
                         ),
                         ft.Divider(),
                         typing_test.visual_element,
@@ -94,7 +96,7 @@ def main(page: ft.Page):
                                     "Heatmaps", on_click=lambda _: page.go("/heatmaps")
                                 ),
                             ],
-                            alignment=ft.MainAxisAlignment.CENTER
+                            alignment=ft.MainAxisAlignment.CENTER,
                         ),
                         ft.Divider(),
                         list_view_builder.build(),
@@ -119,7 +121,7 @@ def main(page: ft.Page):
                                     "Statistics", on_click=lambda _: page.go("/stats")
                                 ),
                             ],
-                            alignment=ft.MainAxisAlignment.CENTER
+                            alignment=ft.MainAxisAlignment.CENTER,
                         ),
                         ft.Divider(),
                         HeatmapsPage(),

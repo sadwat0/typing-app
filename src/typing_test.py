@@ -5,7 +5,7 @@ from enum import Enum
 from flet_timer.flet_timer import Timer
 import flet as ft
 
-from .constants import DEFAULT_WORDS_COUNT, ALLOWED_CHARS
+from src import constants
 from .text_generator import TextGenerator
 from .settings_bar import SettingsBar
 from .information_bar import InformationBar
@@ -34,11 +34,10 @@ class TypingTest:
 
         self.timer = None
 
-        self.words_to_generate = DEFAULT_WORDS_COUNT[1]
+        self.words_to_generate = constants.DEFAULT_WORDS_COUNT[1]
 
         self.text_generator = TextGenerator(language=self.language)
-        self.correct_text = self.text_generator.generate(
-            self.words_to_generate)
+        self.correct_text = self.text_generator.generate(self.words_to_generate)
         self.letter_colors = [LetterColor.UNUSED] * len(self.correct_text)
         self.display_text = self.correct_text
 
@@ -47,7 +46,7 @@ class TypingTest:
         self.main_text = MainText(
             text=self.display_text, letter_colors=self.letter_colors
         )
-        self.settings_bar = SettingsBar(typing_test=self)
+        self.settings_bar = SettingsBar(typing_test=self, language="en")
         self.information_bar = InformationBar()
         self.statistics: Statistics = None
         self.heatmap = HeatmapStatistics()
@@ -78,8 +77,7 @@ class TypingTest:
         self.visual_element.controls[0] = self.information_bar
         self.visual_element.update()
 
-        self.timer = Timer(name="timer", interval_s=1,
-                           callback=self.every_second)
+        self.timer = Timer(name="timer", interval_s=1, callback=self.every_second)
         self.page.views[-1].controls.append(self.timer)
         self.page.views[-1].update()
 
@@ -126,8 +124,7 @@ class TypingTest:
     def regenerate_text(self):
         """Updates text content according to settings"""
 
-        self.correct_text = self.text_generator.generate(
-            self.words_to_generate)
+        self.correct_text = self.text_generator.generate(self.words_to_generate)
         self.letter_colors = [LetterColor.UNUSED] * len(self.correct_text)
         self.main_text.update_content(self.correct_text, self.letter_colors)
 
@@ -160,6 +157,14 @@ class TypingTest:
 
         self.regenerate_text()
 
+    def set_language(self, language: str):
+        """Updates test language"""
+
+        self.language = language
+        self.text_generator.set_language(language)
+
+        self.regenerate_text()
+
     def update_information_bar(self):
         """Update wpm & accuracy text (during test)"""
 
@@ -177,8 +182,12 @@ class TypingTest:
 
         key = e.key.lower()
 
+        if self.language == "ru" and key in constants.QWERTY_NOT_RU_CHARS:
+            pos = constants.QWERTY_NOT_RU_CHARS.index(key)
+            key = constants.QWERTY_RU_CHARS[pos]
+
         if self.status == self.TestStatus.NOT_STARTED and (
-            key == "backspace" or key in ALLOWED_CHARS
+            key == "backspace" or key in constants.ALLOWED_CHARS
         ):
             self.start()
 
@@ -193,7 +202,7 @@ class TypingTest:
                 self.letter_colors[idx] = LetterColor.UNUSED
                 self.statistics.key_pressed(key)
 
-        elif key in ALLOWED_CHARS:
+        elif key in constants.ALLOWED_CHARS:
             position = len(self.printed_text)
             need_key = self.correct_text[position]
 

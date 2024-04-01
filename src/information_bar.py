@@ -33,18 +33,15 @@ class InformationBar(ft.UserControl):
             return self.element
 
     def __init__(self):
-        self.wpm = self.TextElement(
-            value="000.0", color=color_scheme["primary"])
-        self.accuracy = self.TextElement(
-            value="100.0", color=color_scheme["primary"])
+        self.wpm = self.TextElement(value="000.0", color=color_scheme["primary"])
+        self.accuracy = self.TextElement(value="100.0", color=color_scheme["primary"])
 
         self.content = ft.Row(
             [
                 self.TextElement(value="WPM:", color=color_scheme["tertiary"]),
                 self.wpm,
                 ft.VerticalDivider(),
-                self.TextElement(value="Accuracy:",
-                                 color=color_scheme["tertiary"]),
+                self.TextElement(value="Accuracy:", color=color_scheme["tertiary"]),
                 self.accuracy,
             ],
             spacing=15,

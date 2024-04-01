@@ -111,9 +111,11 @@ class HeatmapStatistics:
     """Calculates and stores error heatmap"""
 
     def __init__(self):
-        df = pd.read_csv('./saves/heatmap.csv')
-        self.stats = {"en": np.array(
-            df['en'][:26 * 26]).reshape(26, 26), "ru": np.array(df['ru']).reshape(33, 33)}
+        df = pd.read_csv("./saves/heatmap.csv")
+        self.stats = {
+            "en": np.array(df["en"][: 26 * 26]).reshape(26, 26),
+            "ru": np.array(df["ru"]).reshape(33, 33),
+        }
 
     def add_key_press(self, need_type: str, typed: str):
         """Updates stats"""
@@ -123,26 +125,29 @@ class HeatmapStatistics:
             return
 
         if need_type in LANGUAGE_LETTERS["en"] and typed in LANGUAGE_LETTERS["en"]:
-            need_index = LANGUAGE_LETTERS['en'].find(need_type)
-            typed_index = LANGUAGE_LETTERS['en'].find(typed)
+            need_index = LANGUAGE_LETTERS["en"].find(need_type)
+            typed_index = LANGUAGE_LETTERS["en"].find(typed)
 
             self.stats["en"][need_index][typed_index] += 1
-
-            print(need_index, typed_index,
-                  self.stats["en"][need_index][typed_index])
         elif need_type in LANGUAGE_LETTERS["ru"] and typed in LANGUAGE_LETTERS["ru"]:
-            need_index = LANGUAGE_LETTERS['ru'].find(need_type)
-            typed_index = LANGUAGE_LETTERS['ru'].find(typed)
+            need_index = LANGUAGE_LETTERS["ru"].find(need_type)
+            typed_index = LANGUAGE_LETTERS["ru"].find(typed)
 
             self.stats["ru"][need_index][typed_index] += 1
 
     def save(self):
         """Saves data to csv file"""
 
-        df = pd.DataFrame({
-            'en': np.concatenate([self.stats['en'].reshape(-1),
-                                  np.zeros(33 * 33 - 26 * 26, dtype=int)]),
-            'ru': self.stats['ru'].reshape(-1)
-        })
+        df = pd.DataFrame(
+            {
+                "en": np.concatenate(
+                    [
+                        self.stats["en"].reshape(-1),
+                        np.zeros(33 * 33 - 26 * 26, dtype=int),
+                    ]
+                ),
+                "ru": self.stats["ru"].reshape(-1),
+            }
+        )
 
-        df.to_csv('./saves/heatmap.csv', index=False)
+        df.to_csv("./saves/heatmap.csv", index=False)

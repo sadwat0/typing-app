@@ -16,11 +16,7 @@ LANGUAGE_LETTERS = {
 PUNCTUATION_CHARS = ".,;?!"
 DIGITS = "0123456789"
 ALLOWED_CHARS = (
-    " "
-    + LANGUAGE_LETTERS["en"]
-    + LANGUAGE_LETTERS["ru"]
-    + DIGITS
-    + PUNCTUATION_CHARS
+    " " + LANGUAGE_LETTERS["en"] + LANGUAGE_LETTERS["ru"] + DIGITS + PUNCTUATION_CHARS
 )
 
 DEFAULT_WORDS_COUNT = [10, 25, 50, 100]
@@ -39,3 +35,7 @@ STATISTICS_FIELD_NAMES = [
     "start_time",
     "end_time",
 ]
+
+# flet not supports russian letters in keypress
+QWERTY_NOT_RU_CHARS = "qwertyuiop[]asdfghjkl;'zxcvbnm,."
+QWERTY_RU_CHARS = "йцукенгшщзхъфывапролджэячсмитьбю"
