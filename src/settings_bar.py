@@ -3,15 +3,7 @@
 from typing import List
 from functools import partial
 import flet as ft
-from src.constants import DEFAULT_TIMES, DEFAULT_WORDS_COUNT
-
-color_scheme = {
-    "background": "#242933",
-    "nav_background": "#1c232e",
-    "primary": "#ed4c57",  # red
-    "secondary": "#f5efe9",  # white
-    "tertiary": "#5a6173",  # gray
-}
+from src.constants import DEFAULT_TIMES, DEFAULT_WORDS_COUNT, color_scheme
 
 
 class SettingsBar(ft.UserControl):

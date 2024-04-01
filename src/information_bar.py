@@ -1,14 +1,7 @@
 """Reliaes information bar graphical element"""
 
 import flet as ft
-
-color_scheme = {
-    "background": "#242933",
-    "nav_background": "#1c232e",
-    "primary": "#ed4c57",  # red
-    "secondary": "#f5efe9",  # white
-    "tertiary": "#5a6173",  # gray
-}
+from src.constants import color_scheme
 
 
 class InformationBar(ft.UserControl):

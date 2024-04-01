@@ -2,6 +2,14 @@
 
 from pathlib import Path
 
+color_scheme = {
+    "background": "#242933",
+    "nav_background": "#1c232e",
+    "primary": "#ed4c57",  # red
+    "secondary": "#f5efe9",  # white
+    "tertiary": "#5a6173",  # gray
+}
+
 FONT_SIZE = 25
 
 LANGUAGE_TO_PATH = {

@@ -4,21 +4,13 @@ import seaborn as sns
 import numpy as np
 import pandas as pd
 import flet as ft
-from src.constants import STATISTICS_FIELD_NAMES
+from src.constants import STATISTICS_FIELD_NAMES, color_scheme
 from src.typing_test import TypingTest
 from src.statistics_page import StatisticsPage
 from src.heatmaps_page import HeatmapsPage
 
 matplotlib.use("agg")
 sns.set_theme()
-
-color_scheme = {
-    "background": "#242933",
-    "nav_background": "#1c232e",
-    "primary": "#ed4c57",  # red
-    "secondary": "#f5efe9",  # white
-    "tertiary": "#5a6173",  # gray
-}
 
 
 def main(page: ft.Page):

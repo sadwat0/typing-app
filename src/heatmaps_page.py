@@ -3,16 +3,8 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
 import flet as ft
-from src.constants import LANGUAGE_LETTERS
+from src.constants import LANGUAGE_LETTERS, color_scheme
 from src.statistics_classes import HeatmapStatistics
-
-color_scheme = {
-    "background": "#242933",
-    "nav_background": "#1c232e",
-    "primary": "#ed4c57",  # red
-    "secondary": "#f5efe9",  # white
-    "tertiary": "#5a6173",  # gray
-}
 
 
 class HeatmapsPage(ft.UserControl):
