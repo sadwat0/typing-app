@@ -1,10 +1,12 @@
 import os
+import wget
 import matplotlib
 import seaborn as sns
 import numpy as np
 import pandas as pd
 import flet as ft
 from src.constants import STATISTICS_FIELD_NAMES, color_scheme
+from src import constants
 from src.typing_test import TypingTest
 from src.statistics_page import StatisticsPage
 from src.heatmaps_page import HeatmapsPage
@@ -21,7 +23,7 @@ def main(page: ft.Page):
     page.window_height = 700
     page.bgcolor = color_scheme["background"]
 
-    page.fonts = {"RobotoMono": "./assets/RobotoMono-VariableFont_wght.ttf"}
+    page.fonts = {"RobotoMono": "./assets/" + constants.FILE_NAMES["custom_font"]}
 
     typing_test = TypingTest(page)
 
@@ -120,22 +122,50 @@ def main(page: ft.Page):
 
 if __name__ == "__main__":
     # Checking for saves file existence
+
+    FONT_PATH = "./assets/" + constants.FILE_NAMES["custom_font"]
+    if not os.path.exists(FONT_PATH):
+        os.makedirs("./assets")
+
+        wget.download(constants.DOWNLOAD_URLS["custom_font"], out=FONT_PATH)
+
+    for language in ["en", "ru"]:
+        language_path = (
+            "./assets/vocabulary/" + constants.FILE_NAMES[f"language_{language}"]
+        )
+
+        if not os.path.exists("./assets/vocabulary"):
+            os.makedirs("./assets/vocabulary")
+
+        if not os.path.exists(language_path):
+            wget.download(
+                constants.DOWNLOAD_URLS[f"language_{language}"], out=language_path
+            )
+
     if not os.path.exists("./saves"):
         os.makedirs("./saves")
 
-    if not os.path.isfile("./saves/data.csv"):
-        with open("./saves/data.csv", "w", encoding="utf-8") as f:
+    if not os.path.isfile("./saves/" + constants.FILE_NAMES["data"]):
+        with open(
+            "./saves/" + constants.FILE_NAMES["data"], "w", encoding="utf-8"
+        ) as f:
             f.write(",".join(STATISTICS_FIELD_NAMES) + "\n")
 
-    if not os.path.isfile("./saves/heatmap.csv"):
-        with open("./saves/heatmap.csv", "w", encoding="utf-8") as f:
-            column_size = max(26, 33) ** 2
+    if not os.path.isfile("./saves/" + constants.FILE_NAMES["heatmap"]):
+        with open(
+            "./saves/" + constants.FILE_NAMES["heatmap"], "w", encoding="utf-8"
+        ) as f:
+            max_language_length = 0
+            for letters in constants.LANGUAGE_LETTERS.values():
+                max_language_length = max(max_language_length, len(letters))
+
+            column_size = max_language_length**2
             df = pd.DataFrame(
                 {
                     "en": np.zeros(column_size, dtype=int),
                     "ru": np.zeros(column_size, dtype=int),
                 }
             )
-            df.to_csv("./saves/heatmap.csv", index=False)
+            df.to_csv("./saves/" + constants.FILE_NAMES["heatmap"], index=False)
 
     ft.app(target=main)

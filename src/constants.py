@@ -47,3 +47,20 @@ STATISTICS_FIELD_NAMES = [
 # flet not supports russian letters in keypress
 QWERTY_NOT_RU_CHARS = "qwertyuiop[]asdfghjkl;'zxcvbnm,."
 QWERTY_RU_CHARS = "йцукенгшщзхъфывапролджэячсмитьбю"
+
+DOWNLOAD_URLS = {
+    "custom_font": "https://drive.usercontent.google.com/download?id=18YoEbnanfCJ-oh8iN4wZkEiNQuyrNzt6&export=download&authuser=0",
+    "language_en": "https://gist.githubusercontent.com/deekayen/4148741/raw/98d35708fa344717d8eee15d11987de6c8e26d7d/1-1000.txt",
+    "language_ru": "https://raw.githubusercontent.com/hingston/russian/master/10000-russian-words-cyrillic-only.txt",
+}
+
+FILE_NAMES = {
+    "custom_font": "RobotoMono-VariableFont_wght.ttf",
+    "language_en": "en-1000.txt",
+    "language_ru": "ru-10000.txt",
+    "data": "data.csv",
+    "heatmap": "heatmap.csv",
+}
+
+DATE_FORMATS = {"test_start_end_time": "%H:%M:%S.%f %d/%m/%y",
+                "stats_start_end_time": '%H:%M:%S'}

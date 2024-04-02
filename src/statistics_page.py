@@ -5,6 +5,7 @@ import pandas as pd
 import flet as ft
 from src.statistics_classes import Statistics
 from src.constants import color_scheme
+from src import constants
 
 
 class StatisticsPage(ft.UserControl):
@@ -67,10 +68,12 @@ class StatisticsPage(ft.UserControl):
                         + str(self.statistics.total_key_presses),
                     ),
                     self.create_text_element(
-                        "START", f"{self.statistics.start_time.strftime('%H:%M:%S')}"
+                        "START",
+                        f"{self.statistics.start_time.strftime(constants.DATE_FORMATS['stats_start_end_time'])}",
                     ),
                     self.create_text_element(
-                        "END", f"{self.statistics.end_time.strftime('%H:%M:%S')}"
+                        "END",
+                        f"{self.statistics.end_time.strftime(constants.DATE_FORMATS['stats_start_end_time'])}",
                     ),
                 ],
                 spacing=2,
@@ -99,7 +102,7 @@ class StatisticsPage(ft.UserControl):
 
         self.list_content = []
 
-        self.stats = pd.read_csv("./saves/data.csv")
+        self.stats = pd.read_csv("./saves/" + constants.FILE_NAMES["data"])
         if len(self.stats) == 0:
             self.list_content = [
                 ft.Text(
@@ -117,10 +120,10 @@ class StatisticsPage(ft.UserControl):
                     punctuation=row["punctuation"],
                     numbers=row["numbers"],
                     start_time=datetime.datetime.strptime(
-                        row["start_time"], "%H:%M:%S.%f %d/%m/%y"
+                        row["start_time"], constants.DATE_FORMATS["test_start_end_time"]
                     ),
                     end_time=datetime.datetime.strptime(
-                        row["end_time"], "%H:%M:%S.%f %d/%m/%y"
+                        row["end_time"], constants.DATE_FORMATS["test_start_end_time"]
                     ),
                     total_key_presses=row["total_key_presses"],
                     correct_key_presses=row["correct_key_presses"],

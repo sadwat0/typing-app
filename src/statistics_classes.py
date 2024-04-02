@@ -5,6 +5,7 @@ from csv import DictWriter
 import pandas as pd
 import numpy as np
 from src.constants import LANGUAGE_LETTERS, STATISTICS_FIELD_NAMES
+from src import constants
 
 
 class Statistics:
@@ -97,11 +98,17 @@ class Statistics:
             "numbers": self.numbers,
             "total_key_presses": self.total_key_presses,
             "correct_key_presses": self.correct_key_presses,
-            "start_time": self.start_time.strftime("%H:%M:%S.%f %d/%m/%y"),
-            "end_time": self.end_time.strftime("%H:%M:%S.%f %d/%m/%y"),
+            "start_time": self.start_time.strftime(
+                constants.DATE_FORMATS["test_start_end_time"]
+            ),
+            "end_time": self.end_time.strftime(
+                constants.DATE_FORMATS["test_start_end_time"]
+            ),
         }
 
-        with open("./saves/data.csv", "a", newline="", encoding="utf-8") as stats_file:
+        with open(
+            "./saves/" + constants.FILE_NAMES["data"], "a", newline="", encoding="utf-8"
+        ) as stats_file:
             DictWriter(stats_file, fieldnames=STATISTICS_FIELD_NAMES).writerow(
                 stats_dict
             )
@@ -111,10 +118,14 @@ class HeatmapStatistics:
     """Calculates and stores error heatmap"""
 
     def __init__(self):
-        df = pd.read_csv("./saves/heatmap.csv")
+        df = pd.read_csv("./saves/" + constants.FILE_NAMES["heatmap"])
+
+        en_length = len(constants.LANGUAGE_LETTERS["en"])
+        ru_length = len(constants.LANGUAGE_LETTERS["ru"])
+
         self.stats = {
-            "en": np.array(df["en"][: 26 * 26]).reshape(26, 26),
-            "ru": np.array(df["ru"]).reshape(33, 33),
+            "en": np.array(df["en"][: en_length**2]).reshape(en_length, en_length),
+            "ru": np.array(df["ru"]).reshape(ru_length, ru_length),
         }
 
     def add_key_press(self, need_type: str, typed: str):
@@ -143,11 +154,15 @@ class HeatmapStatistics:
                 "en": np.concatenate(
                     [
                         self.stats["en"].reshape(-1),
-                        np.zeros(33 * 33 - 26 * 26, dtype=int),
+                        np.zeros(
+                            len(constants.LANGUAGE_LETTERS["ru"]) ** 2
+                            - len(constants.LANGUAGE_LETTERS["en"]) ** 2,
+                            dtype=int,
+                        ),
                     ]
                 ),
                 "ru": self.stats["ru"].reshape(-1),
             }
         )
 
-        df.to_csv("./saves/heatmap.csv", index=False)
+        df.to_csv("./saves/" + constants.FILE_NAMES["heatmap"], index=False)

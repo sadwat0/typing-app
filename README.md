@@ -16,6 +16,12 @@ pip install -r requirements.txt
 python main.py
 ```
 
+## Покрытие тестами
+
+```
+python -m pytest -v -s --cov --cov-report=html:coverage_re src tests   
+```
+
 ---
 
 # Документация
