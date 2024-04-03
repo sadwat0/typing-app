@@ -1,7 +1,7 @@
 name: tests-coverage
 on: push
 jobs:
-  build:
+  tests-coverage:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
@@ -15,6 +15,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
+          python3 -m pip install coverage
 
       - name: Run coverage
         run: |
