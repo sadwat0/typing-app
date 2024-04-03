@@ -84,6 +84,9 @@ class TypingTest:
     def stop(self):
         """Ends test (when user typed everything or time run out)"""
 
+        if self.status is not self.TestStatus.RUNNING:
+            return
+
         self.status = self.TestStatus.ENDED
         self.statistics.end()
         self.statistics.save()

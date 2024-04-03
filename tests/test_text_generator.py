@@ -11,8 +11,6 @@ def text_generator_setup(request):
 
 
 def test_no_numbers(text_generator_setup):
-    if text_generator_setup.numbers is True:
-        text_generator_setup.toggle_numbers()
     assert text_generator_setup.numbers is False
 
     generated_text = text_generator_setup.generate(words_count=1000)
@@ -31,8 +29,6 @@ def test_numbers(text_generator_setup):
 
 
 def test_no_punctuation(text_generator_setup):
-    if text_generator_setup.punctuation is True:
-        text_generator_setup.toggle_punctuation()
     assert text_generator_setup.punctuation is False
 
     generated_text = text_generator_setup.generate(words_count=1000)
