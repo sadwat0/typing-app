@@ -147,7 +147,7 @@ class TypingTest:
         """Changes test mode to "time" and sets time to {count}"""
         self.size_mode = "time"
         self.available_time = count
-        self.words_to_generate = 120
+        self.words_to_generate = constants.TYPING_TEST_DEFAULT_WORDS_ON_TIME
 
         self.regenerate_text()
 

@@ -5,6 +5,7 @@ import seaborn as sns
 import flet as ft
 from src.constants import LANGUAGE_LETTERS, color_scheme
 from src.statistics_classes import HeatmapStatistics
+from src import constants
 
 
 class HeatmapsPage(ft.UserControl):
@@ -45,8 +46,8 @@ class HeatmapsPage(ft.UserControl):
 
             self.heatmap = ft.Image(
                 src=f"./saves/heatmaps_{language}.png",
-                width=500,
-                height=500,
+                width=constants.HEATMAP['size'],
+                height=constants.HEATMAP['size'],
                 fit=ft.ImageFit.CONTAIN,
             )
 
@@ -54,10 +55,10 @@ class HeatmapsPage(ft.UserControl):
             return ft.Container(
                 self.heatmap,
                 bgcolor=color_scheme["secondary"],
-                width=500,
-                height=500,
-                border_radius=20,
-                padding=ft.padding.only(top=10, bottom=10, right=20),
+                width=constants.HEATMAP['size'],
+                height=constants.HEATMAP['size'],
+                border_radius=constants.HEATMAP['border_radius'],
+                padding=constants.HEATMAP['padding'],
             )
 
     def __init__(self):

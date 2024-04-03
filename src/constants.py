@@ -1,6 +1,7 @@
 """List of constants"""
 
 from pathlib import Path
+import flet as ft
 
 color_scheme = {
     "background": "#242933",
@@ -62,5 +63,33 @@ FILE_NAMES = {
     "heatmap": "heatmap.csv",
 }
 
-DATE_FORMATS = {"test_start_end_time": "%H:%M:%S.%f %d/%m/%y",
-                "stats_start_end_time": '%H:%M:%S'}
+TYPING_TEST_DEFAULT_WORDS_ON_TIME = 120
+
+DATE_FORMATS = {
+    "test_start_end_time": "%H:%M:%S.%f %d/%m/%y",
+    "stats_start_end_time": "%H:%M:%S",
+}
+
+MAIN_TEXT_WIDTH = 1000
+HEATMAP = {
+    "size": 500,
+    "border_radius": 20,
+    "padding": ft.padding.only(top=10, bottom=10, right=20),
+}
+
+SETTINGS_BAR = {"spacing": 15, "padding": 10, "border_radius": 10, "width": 600}
+
+STATISTICS_PAGE = {
+    "test_content_width": 170,
+    "text_stats_spacing": 2,
+    "test_padding": 20,
+    "test_border_radius": 10,
+    "test_width": 800,
+    "spacing": 10,
+}
+
+TEXT_GENERATOR = {
+    "numbers_probability": 0.15,
+    "max_number": 10_000,
+    "punctuation_probability": 0.15,
+}

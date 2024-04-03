@@ -4,6 +4,7 @@ from enum import Enum
 from typing import List
 import flet as ft
 from src.constants import FONT_SIZE, color_scheme
+from src import constants
 
 
 class LetterColor(Enum):
@@ -69,7 +70,7 @@ class MainText(ft.UserControl):
                 controls=completed_words, wrap=True, spacing=0, run_spacing=0
             ),
             alignment=ft.alignment.center,
-            width=1000,
+            width=constants.MAIN_TEXT_WIDTH,
         )
 
     def update_content(self, text: str, letter_colors: List[LetterColor] | None = None):

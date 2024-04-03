@@ -4,6 +4,7 @@ from typing import List
 from functools import partial
 import flet as ft
 from src.constants import DEFAULT_TIMES, DEFAULT_WORDS_COUNT, color_scheme
+from src import constants
 
 
 class SettingsBar(ft.UserControl):
@@ -95,15 +96,15 @@ class SettingsBar(ft.UserControl):
                 ft.VerticalDivider(width=-3),
             ]
             + self.buttons,
-            spacing=15,
+            spacing=constants.SETTINGS_BAR['spacing'],
             alignment=ft.MainAxisAlignment.CENTER,
         )
 
         self.container = ft.Container(
             self.content,
-            padding=10,
-            border_radius=10,
-            width=600,
+            padding=constants.SETTINGS_BAR['padding'],
+            border_radius=constants.SETTINGS_BAR['border_radius'],
+            width=constants.SETTINGS_BAR['width'],
             bgcolor=color_scheme["nav_background"],
             alignment=ft.alignment.center,
         )

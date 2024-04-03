@@ -2,6 +2,7 @@
 
 import random
 from src.constants import LANGUAGE_TO_PATH, PUNCTUATION_CHARS
+from src import constants
 
 
 class TextGenerator:
@@ -47,11 +48,21 @@ class TextGenerator:
             current_word = random.choice(self.vocabulary).lower()
 
             # add numbers
-            if self.numbers and random.uniform(0, 1) <= 0.15:
-                current_word = str(random.randint(0, 10_000))
+            if (
+                self.numbers
+                and random.uniform(0, 1)
+                <= constants.TEXT_GENERATOR["numbers_probability"]
+            ):
+                current_word = str(
+                    random.randint(0, constants.TEXT_GENERATOR["max_number"])
+                )
 
             # add punctuation
-            if self.punctuation and random.uniform(0, 1) <= 0.15:
+            if (
+                self.punctuation
+                and random.uniform(0, 1)
+                <= constants.TEXT_GENERATOR["punctuation_probability"]
+            ):
                 current_word += random.choice(PUNCTUATION_CHARS)
 
             words.append(current_word)

@@ -30,7 +30,7 @@ class StatisticsPage(ft.UserControl):
                         theme_style=ft.TextThemeStyle.TITLE_MEDIUM,
                     ),
                 ],
-                width=170,
+                width=constants.STATISTICS_PAGE["test_content_width"],
                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
             )
 
@@ -76,7 +76,7 @@ class StatisticsPage(ft.UserControl):
                         f"{self.statistics.end_time.strftime(constants.DATE_FORMATS['stats_start_end_time'])}",
                     ),
                 ],
-                spacing=2,
+                spacing=constants.STATISTICS_PAGE["text_stats_spacing"],
             )
 
         def build(self):
@@ -91,9 +91,9 @@ class StatisticsPage(ft.UserControl):
                         ft.Row([self.text_stats]),
                     ]
                 ),
-                padding=20,
-                border_radius=10,
-                width=800,
+                padding=constants.STATISTICS_PAGE["test_padding"],
+                border_radius=constants.STATISTICS_PAGE["test_border_radius"],
+                width=constants.STATISTICS_PAGE["test_width"],
                 bgcolor=color_scheme["nav_background"],
             )
 
@@ -134,4 +134,9 @@ class StatisticsPage(ft.UserControl):
                 )
 
     def build(self):
-        return ft.ListView(self.list_content, expand=1, spacing=10, auto_scroll=False)
+        return ft.ListView(
+            self.list_content,
+            expand=1,
+            spacing=constants.STATISTICS_PAGE["spacing"],
+            auto_scroll=False,
+        )
