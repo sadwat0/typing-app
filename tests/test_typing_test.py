@@ -2,6 +2,11 @@ import pytest
 import flet as ft
 from unittest.mock import patch
 from src.typing_test import TypingTest, LetterColor
+from src.utils import load_assets
+
+
+def setup():
+    load_assets()
 
 
 @pytest.fixture

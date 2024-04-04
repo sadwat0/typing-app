@@ -2,10 +2,17 @@ import pytest
 from src.settings_bar import SettingsBar
 from src.constants import DEFAULT_TIMES, DEFAULT_WORDS_COUNT
 from src.typing_test import TypingTest
+from src.utils import load_assets
+
+
+def setup():
+    load_assets()
 
 
 @pytest.fixture
 def typing_test_mock(monkeypatch):
+    load_assets()
+    
     class MockControl:
         def __init__(self):
             self.controls = []
