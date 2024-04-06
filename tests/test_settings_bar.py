@@ -12,7 +12,7 @@ def setup():
 @pytest.fixture
 def typing_test_mock(monkeypatch):
     load_assets()
-    
+
     class MockControl:
         def __init__(self):
             self.controls = []

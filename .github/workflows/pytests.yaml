@@ -2,7 +2,7 @@ name: tests-coverage
 on: push
 jobs:
   tests-coverage:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
         with:

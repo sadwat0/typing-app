@@ -87,24 +87,24 @@ class SettingsBar(ft.UserControl):
         self.content = ft.Row(
             [
                 self.language_button,
-                ft.VerticalDivider(width=-3),
+                ft.VerticalDivider(width=constants.SETTINGS_BAR_DIVIDER_WIDTH),
                 self.punctuation,
                 self.numbers,
-                ft.VerticalDivider(width=-3),
+                ft.VerticalDivider(width=constants.SETTINGS_BAR_DIVIDER_WIDTH),
                 self.time,
                 self.words,
-                ft.VerticalDivider(width=-3),
+                ft.VerticalDivider(width=constants.SETTINGS_BAR_DIVIDER_WIDTH),
             ]
             + self.buttons,
-            spacing=constants.SETTINGS_BAR['spacing'],
+            spacing=constants.SETTINGS_BAR["spacing"],
             alignment=ft.MainAxisAlignment.CENTER,
         )
 
         self.container = ft.Container(
             self.content,
-            padding=constants.SETTINGS_BAR['padding'],
-            border_radius=constants.SETTINGS_BAR['border_radius'],
-            width=constants.SETTINGS_BAR['width'],
+            padding=constants.SETTINGS_BAR["padding"],
+            border_radius=constants.SETTINGS_BAR["border_radius"],
+            width=constants.SETTINGS_BAR["width"],
             bgcolor=color_scheme["nav_background"],
             alignment=ft.alignment.center,
         )

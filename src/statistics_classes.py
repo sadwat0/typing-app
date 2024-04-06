@@ -59,8 +59,10 @@ class Statistics:
         """Returns accuracy (in percents)"""
 
         if self.total_key_presses == 0:
-            return 100.0
-        return self.correct_key_presses / self.total_key_presses * 100.0
+            return constants.MAX_ACCURACY
+        return (
+            self.correct_key_presses / self.total_key_presses * constants.MAX_ACCURACY
+        )
 
     def get_cpm(self) -> float:
         """Returns average cpm"""
@@ -71,16 +73,18 @@ class Statistics:
         start_timestamp = self.start_time.timestamp()
         current_timestamp = current_time.timestamp()
 
-        delta_minutes = (current_timestamp - start_timestamp) / 60.0
+        delta_minutes = (
+            current_timestamp - start_timestamp
+        ) / constants.SECONDS_IN_MINUTE
 
         if delta_minutes == 0:
-            return 0.0
+            return constants.DEFAULT_CPM_WITH_NO_TIME
 
         return self.correct_key_presses / delta_minutes
 
     def get_wpm(self) -> float:
-        """Returns average wpm (1 word == 5 chars)"""
-        return self.get_cpm() / 5.0
+        """Returns average wpm (1 word == {constants.CHARACTERS_IN_WORD} chars)"""
+        return self.get_cpm() / constants.CHARACTERS_IN_WORD
 
     def end(self):
         """Writes end_time with current time"""
@@ -154,6 +158,7 @@ class HeatmapStatistics:
                 "en": np.concatenate(
                     [
                         self.stats["en"].reshape(-1),
+                        # adding zeros so length of cols will be same
                         np.zeros(
                             len(constants.LANGUAGE_LETTERS["ru"]) ** 2
                             - len(constants.LANGUAGE_LETTERS["en"]) ** 2,
