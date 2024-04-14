@@ -4,6 +4,33 @@
 
 Б05-328, Ларин Иван
 
+
+![Coverage](./coverage.svg)
+
+## Установка
+
+```
+pip install -r requirements.txt
+```
+
+## Запуск
+
+```
+python main.py
+```
+
+## Покрытие тестами
+
+```
+python -m pytest -v -s --cov --cov-report=html:coverage_re src tests   
+```
+
+---
+
+# Документация
+
+
+
 ## Версия Python
 
 3.10.4, но должно работать и на более новых
@@ -55,7 +82,13 @@
 - `punctuation: bool` - нужно ли добавлять пунктуацию
 - `numbers: bool` - нужно ли добавлять числа
 
+
 Методы:
+
+
+
+
+
 
 - `toggle_punctuation()`
 - `toggle_numbers()`
@@ -100,9 +133,17 @@
 - `end()` - записывает `end_time`
 - `save()` - сохраняет информацию о себе в `.csv` файл
 
+
+
+
+
+
+
+
 ### Класс `HeatmapStatistics`
 
 Атрибуты:
+
 
 - `stats: Dict["en" | "ru", 2-d np.array]` - статистика по опечаткам для отрисовки `heatmap`-а, собранная по каждому языку отдельно
 
