@@ -4,6 +4,7 @@
 
 Б05-328, Ларин Иван
 
+
 ![Coverage](./coverage.svg)
 
 ## Установка
@@ -27,6 +28,8 @@ python -m pytest -v -s --cov --cov-report=html:coverage_re src tests
 ---
 
 # Документация
+
+
 
 ## Версия Python
 
@@ -79,7 +82,13 @@ python -m pytest -v -s --cov --cov-report=html:coverage_re src tests
 - `punctuation: bool` - нужно ли добавлять пунктуацию
 - `numbers: bool` - нужно ли добавлять числа
 
+
 Методы:
+
+
+
+
+
 
 - `toggle_punctuation()`
 - `toggle_numbers()`
@@ -124,9 +133,17 @@ python -m pytest -v -s --cov --cov-report=html:coverage_re src tests
 - `end()` - записывает `end_time`
 - `save()` - сохраняет информацию о себе в `.csv` файл
 
+
+
+
+
+
+
+
 ### Класс `HeatmapStatistics`
 
 Атрибуты:
+
 
 - `stats: Dict["en" | "ru", 2-d np.array]` - статистика по опечаткам для отрисовки `heatmap`-а, собранная по каждому языку отдельно
 
